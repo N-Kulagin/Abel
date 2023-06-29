@@ -1,0 +1,5 @@
+Abel.sln
+Abel/src/main
+/Abel/Abel.vcxproj*
+bin/
+.vs/
