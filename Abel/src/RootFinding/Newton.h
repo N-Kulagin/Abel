@@ -10,15 +10,16 @@ private:
 	std::function<double(double)> f;
 	std::function<double(double)> f_prime;
 	double heuristic;
+	double starting_point;
 
 public:
 
 	SVNewton(const std::function<double(double)>& f, const std::function<double(double)>& f_prime,
 		double tol = 0.01, double heuristic = 0.05, size_t max_iter = 100, double starting_point = 1.0) :
-		f(f), f_prime(f_prime), heuristic(heuristic), SVNumericalMethod(tol, max_iter, starting_point) {}
+		f(f), f_prime(f_prime), heuristic(heuristic),starting_point(starting_point), SVNumericalMethod(tol, max_iter) {}
 	
 	SVNewton(const SVNewton& n) : f(n.f), f_prime(n.f_prime), heuristic(n.heuristic),
-		SVNumericalMethod(n.tol, n.max_iter, n.starting_point, n.wasRun, n.iter_counter, n.result) {}
+		SVNumericalMethod(n.tol, n.max_iter, n.wasRun, n.iter_counter, n.result) {}
 	
 	
 	SVNewton& operator=(const SVNewton& n) {
