@@ -16,4 +16,5 @@ public:
 	virtual bool was_run() const final { return wasRun; };
 	virtual size_t niter() const final { return iter_counter; };
 	virtual void solve() {};
+	virtual double getResult() const final { return result; }
 };

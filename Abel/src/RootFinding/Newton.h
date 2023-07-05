@@ -18,7 +18,7 @@ public:
 		double tol = 0.01, double heuristic = 0.05, size_t max_iter = 100, double starting_point = 1.0) :
 		f(f), f_prime(f_prime), heuristic(heuristic),starting_point(starting_point), SVNumericalMethod(tol, max_iter) {}
 	
-	SVNewton(const SVNewton& n) : f(n.f), f_prime(n.f_prime), heuristic(n.heuristic),
+	SVNewton(const SVNewton& n) : f(n.f), f_prime(n.f_prime), heuristic(n.heuristic), starting_point(n.starting_point),
 		SVNumericalMethod(n.tol, n.max_iter, n.wasRun, n.iter_counter, n.result) {}
 	
 	
@@ -36,7 +36,7 @@ public:
 		return *this;
 	}
 	
-	friend std::ostream& operator<<(std::ostream&, const SVNewton&); // is friend necessary??
+	friend std::ostream& operator<<(std::ostream&, const SVNewton&);
 	
 	void setParams(double tol_ = 0.01, double heuristic_ = 0.05, size_t max_iter_ = 100, double starting_point_ = 1.0) {
 		tol = tol_;
@@ -47,8 +47,6 @@ public:
 		result = 0.0;
 		iter_counter = 0;
 	}
-	
-	double getResult() { return result; }
 	
 	void solve() {
 		iter_counter = 0;
@@ -109,6 +107,6 @@ std::ostream& operator<<(std::ostream& out, const SVNewton& n) {
 		<< "Heuristic: " << n.heuristic << '\n'
 		<< "Max iterations: " << n.max_iter << '\n'
 		<< "Performed iterations: " << n.iter_counter << '\n'
-		<< "Starting point: " << n.starting_point << '\n';
+		<< "Starting point: " << n.starting_point;
 	return out;
 }
