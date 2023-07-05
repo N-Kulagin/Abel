@@ -73,8 +73,7 @@ public:
 		double psi_1 = 0.0;
 	
 		double tau = 1.0;
-	
-		//double stop_criterion = 1.0;
+
 		error = 1.0;
 	
 		// one iteration
