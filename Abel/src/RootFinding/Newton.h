@@ -11,14 +11,16 @@ private:
 	std::function<double(double)> f_prime;
 	double heuristic;
 	double starting_point;
+	double multiplicity;
+	double error;
 
 public:
 
 	SVNewton(const std::function<double(double)>& f, const std::function<double(double)>& f_prime,
 		double tol = 0.01, double heuristic = 0.05, size_t max_iter = 100, double starting_point = 1.0) :
-		f(f), f_prime(f_prime), heuristic(heuristic),starting_point(starting_point), SVNumericalMethod(tol, max_iter) {}
+		f(f), f_prime(f_prime), heuristic(heuristic), starting_point(starting_point), multiplicity(-1.0), error(1.0), SVNumericalMethod(tol, max_iter) {}
 	
-	SVNewton(const SVNewton& n) : f(n.f), f_prime(n.f_prime), heuristic(n.heuristic), starting_point(n.starting_point),
+	SVNewton(const SVNewton& n) : f(n.f), f_prime(n.f_prime), heuristic(n.heuristic), starting_point(n.starting_point), multiplicity(n.multiplicity), error(n.error),
 		SVNumericalMethod(n.tol, n.max_iter, n.wasRun, n.iter_counter, n.result) {}
 	
 	
@@ -32,6 +34,8 @@ public:
 		starting_point = n.starting_point;
 		wasRun = n.wasRun;
 		result = n.result;
+		multiplicity = n.multiplicity;
+		error = n.error;
 	
 		return *this;
 	}
@@ -46,7 +50,12 @@ public:
 		wasRun = false;
 		result = 0.0;
 		iter_counter = 0;
+		multiplicity = -1.0;
+		error = 0.0;
 	}
+
+	double getMultiplicity() { return multiplicity; }
+	double getError() { return error; }
 	
 	void solve() {
 		iter_counter = 0;
@@ -65,7 +74,8 @@ public:
 	
 		double tau = 1.0;
 	
-		double stop_criterion = 1.0;
+		//double stop_criterion = 1.0;
+		error = 1.0;
 	
 		// one iteration
 		x_cur = x_prev - f_prev / f_prime_prev;
@@ -78,7 +88,7 @@ public:
 		++iter_counter;
 		//
 	
-		while (stop_criterion > tol && iter_counter < max_iter)
+		while (error > tol && iter_counter < max_iter)
 		{
 			f_prev = f(x_prev);
 			f_prime_prev = f_prime(x_prev);
@@ -90,12 +100,13 @@ public:
 			tau = (psi_0 + heuristic * psi_1) / (psi_0 + psi_1);
 			x_cur = x_prev - tau * f_prev / f_prime_prev;
 	
-			stop_criterion = abs((x_cur - x_prev) / (1.0 - (x_cur - x_prev) / (x_prev - x_prev_prev)));
+			error = abs((x_cur - x_prev) / (1.0 - (x_cur - x_prev) / (x_prev - x_prev_prev)));
 			x_prev_prev = x_prev;
 			x_prev = x_cur;
 	
 			++iter_counter;
 		}
+		multiplicity = abs(1.0 / (1.0 - (x_cur - x_prev) / (x_prev - x_prev_prev)));
 		result = x_cur;
 		wasRun = 1;
 	}
