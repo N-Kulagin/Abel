@@ -5,7 +5,7 @@
 #include <random>
 
 template <typename Derived>
-void SimplexProjection_Linear(Eigen::MatrixBase<Derived>const& y, double beta = 1.0) {
+void SimplexProjection(Eigen::MatrixBase<Derived>const& y, double beta = 1.0) {
 
 	if (y.cols() > 1) throw 1;
 
@@ -57,7 +57,7 @@ void SimplexProjection_Linear(Eigen::MatrixBase<Derived>const& y, double beta = 
 }
 
 template <typename Derived>
-void SimplexProjection_Linear(Eigen::MatrixBase<Derived>& y, double beta = 1.0) {
+void SimplexProjection(Eigen::MatrixBase<Derived>& y, double beta = 1.0) {
 	for (int i = 0; i < y.cols(); i++)
 	{
 		SimplexProjection_Linear(y.col(i), beta);
