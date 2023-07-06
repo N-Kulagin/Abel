@@ -99,13 +99,14 @@ public:
 			tau = (psi_0 + heuristic * psi_1) / (psi_0 + psi_1);
 			x_cur = x_prev - tau * f_prev / f_prime_prev;
 	
-			error = abs((x_cur - x_prev) / (1.0 - (x_cur - x_prev) / (x_prev - x_prev_prev)));
+			multiplicity = abs(1.0 / (1.0 - (x_cur - x_prev) / (x_prev - x_prev_prev)));
+			error = abs((x_cur - x_prev) * multiplicity);
+
 			x_prev_prev = x_prev;
 			x_prev = x_cur;
 	
 			++iter_counter;
 		}
-		multiplicity = abs(1.0 / (1.0 - (x_cur - x_prev) / (x_prev - x_prev_prev)));
 		result = x_cur;
 		wasRun = 1;
 	}
