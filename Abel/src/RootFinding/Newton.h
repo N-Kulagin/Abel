@@ -6,7 +6,7 @@
 
 class SVNewton : public SVNumericalMethod {
 
-private:
+protected:
 	std::function<double(double)> f;
 	std::function<double(double)> f_prime;
 	double heuristic;
@@ -42,7 +42,7 @@ public:
 	
 	friend std::ostream& operator<<(std::ostream&, const SVNewton&);
 	
-	void setParams(double tol_ = 0.01, double heuristic_ = 0.05, size_t max_iter_ = 100, double starting_point_ = 1.0) {
+	virtual void setParams(double tol_ = 0.01, double heuristic_ = 0.05, size_t max_iter_ = 100, double starting_point_ = 1.0) {
 		tol = tol_;
 		heuristic = heuristic_;
 		max_iter = max_iter_;
@@ -57,7 +57,7 @@ public:
 	double getMultiplicity() { return multiplicity; }
 	double getError() { return error; }
 	
-	void solve() {
+	virtual void solve() {
 		iter_counter = 0;
 	
 		double x_prev_prev = starting_point;
@@ -65,7 +65,7 @@ public:
 		double x_cur = x_prev;
 	
 		double f_prev = f(x_prev);
-		double f_cur = f_prime(x_prev);
+		double f_cur = f(x_cur);
 	
 		double f_prime_prev = f_prime(x_prev);
 	
@@ -121,3 +121,75 @@ std::ostream& operator<<(std::ostream& out, const SVNewton& n) {
 		<< "Starting point: " << n.starting_point;
 	return out;
 }
+
+class SVNewtonGlobal : public SVNewton {
+
+public:
+
+	SVNewtonGlobal(const std::function<double(double)>& f, const std::function<double(double)>& f_prime,
+		double tol = 0.01, size_t max_iter = 100, double starting_point = 1.0) : SVNewton(f, f_prime, tol, 0.05, max_iter, starting_point) {}
+
+	void setParams(double tol_ = 0.01, size_t max_iter_ = 100, double starting_point_ = 1.0) {
+		tol = tol_;
+		max_iter = max_iter_;
+		starting_point = starting_point_;
+		wasRun = false;
+		result = 0.0;
+		iter_counter = 0;
+		multiplicity = -1.0;
+		error = 0.0;
+	}
+
+	void solve() override {
+		iter_counter = 0;
+
+		double x_prev_prev = starting_point;
+		double x_prev = x_prev_prev;
+		double x_cur = x_prev;
+
+		double f_prev = f(x_prev);
+		double f_cur = f(x_cur);
+
+		double f_prime_prev = f_prime(x_prev);
+
+		error = 1.0;
+		double step = 1.0;
+
+		x_cur = x_prev - f_prev / f_prime_prev;
+		f_cur = f(x_cur);
+		while (abs(f_cur) > abs(f_prev))
+		{
+			step /= 2.0;
+			x_cur = x_prev - step * f_prev / f_prime_prev;
+			f_cur = f(x_cur);
+		}
+		x_prev = x_cur;
+		++iter_counter;
+
+		while (error > tol && iter_counter < max_iter)
+		{
+			step = 1.0;
+			f_prev = f(x_prev);
+			f_prime_prev = f_prime(x_prev);
+			x_cur = x_prev - step * f_prev / f_prime_prev;
+			f_cur = f(x_cur);
+
+			while (abs(f_cur) >= abs(f_prev))
+			{
+				step /= 2.0;
+				x_cur = x_prev - step * f_prev / f_prime_prev;
+				f_cur = f(x_cur);
+			}
+
+			multiplicity = abs(1.0 / (1.0 - (x_cur - x_prev) / (x_prev - x_prev_prev)));
+			error = abs((x_cur - x_prev) * multiplicity);
+
+			x_prev_prev = x_prev;
+			x_prev = x_cur;
+
+			++iter_counter;
+		}
+		result = x_cur;
+		wasRun = 1;
+	}
+};
