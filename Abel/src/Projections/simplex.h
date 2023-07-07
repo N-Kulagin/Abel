@@ -9,6 +9,16 @@ void SimplexProjection(Eigen::MatrixBase<Derived>const& y, double beta = 1.0) {
 
 	if (y.cols() > 1) throw 1;
 
+	bool inside_simplex = true;
+	bool satisfy_equality = false;
+	if (abs(y.sum() - beta) <= 1e-7) satisfy_equality = true;
+	for (size_t i = 0; i < y.rows(); i++)
+	{
+		if (y(i) < 0) { inside_simplex = false; break; }
+	}
+	if (inside_simplex && satisfy_equality) return;
+
+
 	double s = 0.0;
 	double rho = 0.0;
 	double d_rho = 0.0;
@@ -60,6 +70,6 @@ template <typename Derived>
 void SimplexProjection(Eigen::MatrixBase<Derived>& y, double beta = 1.0) {
 	for (int i = 0; i < y.cols(); i++)
 	{
-		SimplexProjection_Linear(y.col(i), beta);
+		SimplexProjection(y.col(i), beta);
 	}
 }
