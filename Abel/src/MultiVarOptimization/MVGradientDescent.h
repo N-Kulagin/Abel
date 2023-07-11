@@ -6,106 +6,170 @@
 class MVGradientDescent : public MVNumericalMethod {
 
 protected:
-	std::function<double(const Eigen::VectorXd& x)> f; // could be used as an alternative for adaptive restarts
-	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad;
-	std::function<void(Eigen::VectorXd& x)> proj = [](Eigen::VectorXd& x) {};
+	std::function<double(const Eigen::VectorXd& x)> f; // primary differentiable objective, could be used as an alternative for adaptive restarts
+	std::function<double(const Eigen::VectorXd& x)> g; // secondary convex non-differentiable objective, add me to copy constructor and = operator
+	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of the function f
+	std::function<void(Eigen::VectorXd&, double)> prox = [](Eigen::VectorXd& x, double step) {}; // proximal operator for step * g function
 	Eigen::VectorXd starting_point;
-	double error;
-	double step;
-	bool isProjected = false;
+	double error; // convergence criterion
+	double step; // step length
+	double gamma = 0.5; // non-convex backtracking parameter
+	double eta = 2.0; // backtracking parameter
+	double L = 1.0; // Lipschitz constant
+	bool isConvex = false; // is the underlying problem convex?
+	bool isConstStep = false; // should the step size be constant (1/L)?
 
-public:
-	MVGradientDescent(const std::function<double(const Eigen::VectorXd& x)>& f, const std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)>& f_grad,
-		size_t dimension, double tol = 0.01, double step = 0.01, int max_iter = 100, const Eigen::VectorXd& start = Eigen::VectorXd()) :
-		f(f), f_grad(f_grad), error(-1.0), starting_point(start), step(std::min(std::max(0.0, step) + 0.0001, 1.0)), MVNumericalMethod(dimension, tol, max_iter) {
+public: 
+	MVGradientDescent(const std::function<double(const Eigen::VectorXd& x)>& f,
+		const std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)>& f_grad, size_t dimension,
+		std::function<double(const Eigen::VectorXd& x)> g = [](const Eigen::VectorXd& x) { return 0.0; },
+		double tol = 1e-5, double step = 0.001, int max_iter = 100, const Eigen::VectorXd& start = Eigen::VectorXd()) :
+		f(f), g(g), f_grad(f_grad), error(-1.0), starting_point(start), step(std::min(std::max(0.0, step) + 0.0001, 1.0)), MVNumericalMethod(dimension, tol, max_iter) {
 		if (starting_point.size() == 0) {
 			starting_point.resize(dimension);
 			starting_point.setConstant(1.0);
 		}
 	}
-	MVGradientDescent(const MVGradientDescent& g) : f(g.f), f_grad(g.f_grad), proj(g.proj), error(g.error), starting_point(g.starting_point),
-		step(g.step), isProjected(g.isProjected), MVNumericalMethod(g.dimension, g.tol, g.max_iter, g.wasRun, g.iter_counter, g.result) {}
+	MVGradientDescent(const MVGradientDescent& gr) : f(gr.f), g(gr.g), f_grad(gr.f_grad), prox(gr.prox), starting_point(gr.starting_point), error(gr.error),
+		step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep), MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.was_run, gr.iter_counter, gr.result) {}
 
-	MVGradientDescent& operator=(const MVGradientDescent& g) {
-		f = g.f;
-		f_grad = g.f_grad;
-		proj = g.proj;
-		starting_point = g.starting_point;
-		step = g.step;
-		error = g.error;
-		isProjected = g.isProjected;
-		tol = g.tol;
-		max_iter = g.max_iter;
-		iter_counter = g.iter_counter;
-		dimension = g.dimension;
-		result = g.result;
-		wasRun = g.wasRun;
+	MVGradientDescent& operator=(const MVGradientDescent& gr) {
+		f = gr.f;
+		g = gr.g;
+		f_grad = gr.f_grad;
+		prox = gr.prox;
+		starting_point = gr.starting_point;
+		error = gr.error;
+		step = gr.step;
+		tol = gr.tol;
+		max_iter = gr.max_iter;
+		iter_counter = gr.iter_counter;
+		dimension = gr.dimension;
+		result = gr.result;
+		was_run = gr.was_run;
+		isConvex = gr.isConvex;
+		isConstStep = gr.isConstStep;
 		return *this;
 	}
 
-	virtual void solve() override {
-		Eigen::VectorXd y = starting_point;
-		Eigen::VectorXd x_prev = y;
-		Eigen::VectorXd x = y;
-		Eigen::VectorXd grad(dimension);
-		Eigen::VectorXd z(dimension);
+	void solve() override {
 
-		double theta = 1.0;
+		// FISTA algorithm with adaptive restarts and backtracking of Lipschitz constant L
+		// Reference:
+		// - Adaptive Restart for Accelerated Gradient Schemes (Brendan O'Donoghue, Emmanuel Candes) - https://arxiv.org/abs/1204.3982
+		// - Lipschitz constant backtracking due to "Amir Beck, First-Order Methods in Optimization" Chapter 10, p. [10,15,23] - https://archive.siam.org/books/mo25/
+
+		if (was_run) { return; }
+
+		// variables
+		Eigen::VectorXd x = starting_point;
+		Eigen::VectorXd x_prev = x;
+		Eigen::VectorXd y = x;
+		Eigen::VectorXd y_prev = x;
+
+		Eigen::VectorXd grad(dimension); // gradient
+		Eigen::VectorXd G(dimension); // generalized gradient (gradient mapping)
+		Eigen::VectorXd z(dimension); // temporary variable
+
+		double theta = 1.0; // initial values of theta and beta for accelerated prox scheme of FISTA
 		double theta_prev = theta;
 		double beta = 1.0;
-		double q = isProjected ? 0.0 : 0.001; // 0.001
-		error = tol + 0.1;
-		iter_counter = 0;
+		double restart_criterion = 0.0; // when this is positive a restart happens
 
-		// Adaptive Restart for Accelerated Gradient Schemes Brendan O'Donoghue, Emmanuel Candes
-		// https://arxiv.org/abs/1204.3982v1
+		do
+		{
+			y_prev = y;
+			L = isConstStep ? 1.0 / step : 1.0; // if there's a const step enabled choose L accordingly (step = 1/L), otherwise set L = 1.0
+			f_grad(grad, y_prev);
+			y = y_prev - grad / L;
+			prox(y, 1.0 / L); // evaluate next prox iterate
+			if (isConstStep && !isConvex) {
+				G = L * (y - y_prev);
+			}
+			else {
+				G = y - y_prev;
+			}
 
-		while (iter_counter < max_iter && error >= tol) {
-
-			do
+			error = G.squaredNorm();
+			if (error <= 1e-15) { x = y; break; } // safety
+			if (!isConstStep && isConvex)
 			{
-				theta = 0.5 * (sqrt(pow(theta_prev, 4.0) - 2 * q * pow(theta_prev, 2.0) + 4.0 * pow(theta_prev, 2.0) + pow(q, 2.0)) + q - pow(theta_prev, 2.0));
-				beta = theta_prev * (1.0 - theta_prev) / (pow(theta_prev, 2.0) + theta);
-				theta_prev = theta;
-
-				x_prev = x;
-				f_grad(grad, y);
-				x = y - step * grad;
-
-				if (isProjected) {
-					proj(x);
-					z = x - x_prev;
-					error = z.norm();
+				while (f(y) > f(y_prev) + grad.dot(G) + L / 2.0 * error) // backtracking for convex case
+				{
+					L *= eta;
+					y = y_prev - grad / L;
+					prox(y, 1.0 / L);
+					G = (y - y_prev);
+					error = G.squaredNorm();
 				}
-				else {
-					z = x - x_prev;
-					error = grad.norm();
+			}
+			else if (!isConstStep && !isConvex)
+			{
+				while (f(y_prev) + g(y_prev) - f(y) - g(y) < gamma / L * error) // backtracking for non-convex case
+				{
+					L *= eta;
+					y = y_prev - grad / L;
+					prox(y, 1.0 / L);
+					G = L * (y - y_prev);
+					error = G.squaredNorm();
 				}
+			}
 
-				y = x + beta * z;
-				++iter_counter;
-			} while (grad.dot(z) <= 0.0 && error >= tol && iter_counter < max_iter); // grad.dot(z) <= 0.0 && error >= tol
+			error = sqrt(error);
 			x_prev = x;
-			y = x;
-			theta = 1.0;
+			x = y;
+			theta = (1.0 + sqrt(1.0 + 4.0 * pow(theta_prev, 2.0))) / 2.0;
+			beta = (theta_prev - 1.0) / theta;
 			theta_prev = theta;
-		}
+			z = x - x_prev;
+			y = x + beta * (z);
+
+			restart_criterion = isConvex ? G.dot(z) * (-L) : -(G.dot(z)); // restart criterion for different cases of generalized gradient
+
+			if (restart_criterion > 0) { // restart whenever this is positive
+				x = x_prev;
+				y = x;
+				theta = 1.0;
+				theta_prev = theta;
+			}
+			// for debugging purposes
+			//std::cout << "L: " << L << " Beta: " << beta << " Theta: " << theta << " Error: " << error << " Restart: " << (restart_criterion > 0) << '\n';
+			//std::cout << x << '\n';
+			++iter_counter;
+		} while (error >= tol && iter_counter < max_iter);
+
+		// for debugging purposes
+		//std::cout << "This was convex(" << isConvex << "), constant step(" << isConstStep << ')' << '\n';
+
 		result = x;
-		wasRun = true;
+		was_run = true;
 	}
+	// prox operator must be passed with type "double" parameter because in proximal gradient descent 
+	// if you have a step \alpha and a function g(x) for which you want to compute proximal operator, it's the same as computing proximal gradient for alpha * g
+	// (see LaTeX below)
+	// the convention is that projection operators (prox of indicator function) still have the alpha, but don't use it
+	// while Abel's own prox operators already have necessary slot for such scalar
+	// i. e. you can create a lambda function and call L1Prox(x, alpha * beta) inside it for user defined parameter "beta"
+	// --- LaTeX formatting ---
+	// x_{k+1} = prox_{g}(y_k) = \underset{u \in \mathbb{R}^n}{\arg \min}(g(u) + \frac{1}{2\alpha}||u-y_k||_2^2) = 
+	// \underset{u \in \mathbb{R}^n}{\arg \min}(\alpha g(u) + \frac{1}{2}||u-y_k||_2^2) = prox_{\alpha g}(y_k)
+	void setProx(const std::function<void(Eigen::VectorXd& x, double alpha)>& Prox) { prox = Prox; }
 
-	void setProjection(const std::function<void(Eigen::VectorXd& x)>& Proj) { proj = Proj; isProjected = true; }
-	void disableProjection() { isProjected = false; }
-
-	void setParams(double tol_ = 0.01, size_t max_iter_ = 100, double step_ = 0.01, const Eigen::VectorXd& start = Eigen::VectorXd()) {
+	void setParams(double tol_ = 1e-5, size_t max_iter_ = 100, double step_ = 0.001, const Eigen::VectorXd& start = Eigen::VectorXd()) {
 		tol = std::max(1e-15, tol_);
 		max_iter = std::max(2, max_iter);
 		iter_counter = 0;
-		wasRun = 0;
+		was_run = 0;
 		step = std::min(std::max(0.0, step) + 0.0001, 1.0);
 		if (start.size() == starting_point.size()) {
 			starting_point = start;
 		}
+	}
+	void toggleConstStep() {
+		isConstStep = isConstStep ? false : true;
+	}
+	void toggleConvex() {
+		isConvex = isConvex ? false : true;
 	}
 	double getError() { return error; }
 };
