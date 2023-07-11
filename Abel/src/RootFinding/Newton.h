@@ -21,7 +21,7 @@ public:
 		f(f), f_prime(f_prime), heuristic(heuristic), starting_point(starting_point), multiplicity(-1.0), error(1.0), SVNumericalMethod(tol, max_iter) {}
 	
 	SVNewton(const SVNewton& n) : f(n.f), f_prime(n.f_prime), heuristic(n.heuristic), starting_point(n.starting_point), multiplicity(n.multiplicity), error(n.error),
-		SVNumericalMethod(n.tol, n.max_iter, n.wasRun, n.iter_counter, n.result) {}
+		SVNumericalMethod(n.tol, n.max_iter, n.was_run, n.iter_counter, n.result) {}
 	
 	
 	SVNewton& operator=(const SVNewton& n) {
@@ -32,7 +32,7 @@ public:
 		max_iter = n.max_iter;
 		iter_counter = n.iter_counter;
 		starting_point = n.starting_point;
-		wasRun = n.wasRun;
+		was_run = n.was_run;
 		result = n.result;
 		multiplicity = n.multiplicity;
 		error = n.error;
@@ -47,7 +47,7 @@ public:
 		heuristic = heuristic_;
 		max_iter = max_iter_;
 		starting_point = starting_point_;
-		wasRun = false;
+		was_run = false;
 		result = 0.0;
 		iter_counter = 0;
 		multiplicity = -1.0;
@@ -108,7 +108,7 @@ public:
 			++iter_counter;
 		}
 		result = x_cur;
-		wasRun = 1;
+		was_run = 1;
 	}
 };
 
@@ -133,7 +133,7 @@ public:
 		tol = tol_;
 		max_iter = max_iter_;
 		starting_point = starting_point_;
-		wasRun = false;
+		was_run = false;
 		result = 0.0;
 		iter_counter = 0;
 		multiplicity = -1.0;
@@ -190,6 +190,6 @@ public:
 			++iter_counter;
 		}
 		result = x_cur;
-		wasRun = 1;
+		was_run = 1;
 	}
 };

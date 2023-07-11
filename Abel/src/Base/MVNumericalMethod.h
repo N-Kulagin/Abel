@@ -10,11 +10,11 @@ protected:
 	int iter_counter;
 	size_t dimension;
 	Eigen::VectorXd result;
-	bool wasRun;
+	bool was_run;
 
-	MVNumericalMethod(size_t dimension, double tol = 0.01, int max_iter = 100, bool wasRun = 0, int iter_counter = 0,
+	MVNumericalMethod(size_t dimension, double tol = 0.01, int max_iter = 100, bool was_run = 0, int iter_counter = 0,
 		const Eigen::VectorXd& res = Eigen::VectorXd()) :
-		tol(std::max(1e-15, tol)), max_iter(std::max(2, max_iter)), iter_counter(iter_counter), wasRun(wasRun), result(res), dimension(dimension) {
+		tol(std::max(1e-15, tol)), max_iter(std::max(2, max_iter)), iter_counter(iter_counter), was_run(was_run), result(res), dimension(dimension) {
 		if (result.size() == 0) {
 			result.resize(dimension);
 			result.setConstant(1.0);
@@ -22,7 +22,7 @@ protected:
 	}
 
 public:
-	virtual bool was_run() const final { return wasRun; };
+	virtual bool wasRun() const final { return was_run; };
 	virtual size_t niter() const final { return iter_counter; };
 	virtual void solve() {};
 	virtual Eigen::VectorXd& getResult() const final { return const_cast<Eigen::VectorXd&>(result); }

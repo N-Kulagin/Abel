@@ -16,7 +16,7 @@ public:
 	SVGoldenSection(const std::function<double(double)>& f, double tol = 0.01, double lb = -1e+5, double ub = 1e+5, size_t max_iter = 100) :
 		f(f), lb(lb), ub(ub), SVNumericalMethod(tol, max_iter) {}
 
-	SVGoldenSection(const SVGoldenSection& g) : f(g.f), lb(g.lb), ub(g.ub), SVNumericalMethod(g.tol, g.max_iter, g.wasRun, g.iter_counter, g.result) {}
+	SVGoldenSection(const SVGoldenSection& g) : f(g.f), lb(g.lb), ub(g.ub), SVNumericalMethod(g.tol, g.max_iter, g.was_run, g.iter_counter, g.result) {}
 
 	SVGoldenSection& operator=(const SVGoldenSection& g) {
 		f = g.f;
@@ -25,7 +25,7 @@ public:
 		tol = g.tol;
 		max_iter = g.max_iter;
 		iter_counter = g.iter_counter;
-		wasRun = g.wasRun;
+		was_run = g.was_run;
 		result = g.result;
 		return *this;
 	}
@@ -38,7 +38,7 @@ public:
 		ub = ub_;
 		max_iter = max_iter_;
 		iter_counter = 0;
-		wasRun = false;
+		was_run = false;
 		result = 0.0;
 	}
 
@@ -79,7 +79,7 @@ public:
 			}
 		}
 		result = (a + b) / 2.0;
-		wasRun = true;
+		was_run = true;
 	}
 
 };
