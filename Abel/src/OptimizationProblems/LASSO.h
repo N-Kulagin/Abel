@@ -31,7 +31,8 @@ Eigen::Matrix<double, 5, 1> LASSO(const Eigen::MatrixXd& A, const Eigen::VectorX
 	// L = ||A^T * A||_2 = ||A||_2^2
 	double L = pow(A.operatorNorm(), 2.0);
 
-	MVGradientDescent gr(f, f_grad, A.cols(), g, tol, 1.0 / L, max_iter, result);
+	MVGradientDescent gr(f, f_grad, A.cols(), g, tol, 1.0 / L, max_iter);
+	gr.setStart(result);
 	gr.setProx(prox);
 	gr.toggleConstStep();
 	gr.toggleConvex();

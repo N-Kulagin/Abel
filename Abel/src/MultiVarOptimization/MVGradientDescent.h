@@ -10,7 +10,7 @@ protected:
 	std::function<double(const Eigen::VectorXd& x)> g; // secondary convex non-differentiable objective, add me to copy constructor and = operator
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of the function f
 	std::function<void(Eigen::VectorXd&, double)> prox = [](Eigen::VectorXd& x, double step) {}; // proximal operator for step * g function
-	Eigen::VectorXd starting_point;
+	Eigen::VectorXd starting_point = Eigen::VectorXd();
 	double error; // convergence criterion
 	double step; // step length
 	double gamma = 0.5; // non-convex backtracking parameter
@@ -18,13 +18,14 @@ protected:
 	double L = 1.0; // Lipschitz constant
 	bool isConvex = false; // is the underlying problem convex?
 	bool isConstStep = false; // should the step size be constant (1/L)?
+	bool hasStartingPoint = false;
 
 public: 
 	MVGradientDescent(const std::function<double(const Eigen::VectorXd& x)>& f,
 		const std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)>& f_grad, size_t dimension,
 		std::function<double(const Eigen::VectorXd& x)> g = [](const Eigen::VectorXd& x) { return 0.0; },
-		double tol = 1e-5, double step = 0.001, int max_iter = 100, const Eigen::VectorXd& start = Eigen::VectorXd()) :
-		f(f), g(g), f_grad(f_grad), error(-1.0), starting_point(start), step(std::min(std::max(0.0, step) + 0.0001, 1.0)), MVNumericalMethod(dimension, tol, max_iter) {
+		double tol = 1e-5, double step = 0.001, int max_iter = 100) :
+		f(f), g(g), f_grad(f_grad), error(-1.0), step(std::min(std::max(0.0, step) + 0.0001, 1.0)), MVNumericalMethod(dimension, tol, max_iter) {
 		if (starting_point.size() == 0) {
 			starting_point.resize(dimension);
 			starting_point.setConstant(1.0);
@@ -49,6 +50,7 @@ public:
 		was_run = gr.was_run;
 		isConvex = gr.isConvex;
 		isConstStep = gr.isConstStep;
+		hasStartingPoint = gr.hasStartingPoint;
 		return *this;
 	}
 
@@ -60,6 +62,7 @@ public:
 		// - Lipschitz constant backtracking due to "Amir Beck, First-Order Methods in Optimization" Chapter 10, p. [10,15,23] - https://archive.siam.org/books/mo25/
 
 		if (was_run) { return; }
+		if (!hasStartingPoint) { starting_point.setRandom(); }
 
 		// variables
 		Eigen::VectorXd x = starting_point;
@@ -164,6 +167,10 @@ public:
 		if (start.size() == starting_point.size()) {
 			starting_point = start;
 		}
+	}
+	void setStart(const Eigen::VectorXd& x) {
+		starting_point = x;
+		hasStartingPoint = true;
 	}
 	void toggleConstStep() {
 		isConstStep = isConstStep ? false : true;
