@@ -17,7 +17,7 @@ void L2BallProjection_InPlace(Eigen::ArrayBase<Derived>const& vec, double radius
 }
 
 template <typename Derived1, typename Derived2>
-void L2BallProjection(const Eigen::MatrixBase<Derived1>const& vec, Eigen::MatrixBase<Derived2> const& result, double radius = 1.0) {
+void L2BallProjection(Eigen::MatrixBase<Derived1>const& vec, Eigen::MatrixBase<Derived2> const& result, double radius = 1.0) {
 	const_cast<Eigen::MatrixBase<Derived2>&>(result) = vec;
 	double norm_squared = result.squaredNorm();
 	if (norm_squared <= pow(radius, 2.0)) return;
