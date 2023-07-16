@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Eigen/Dense"
 #include "MultiVarOptimization/MVGradientDescent.h"
 #include "Prox/prox_l1.h"
 

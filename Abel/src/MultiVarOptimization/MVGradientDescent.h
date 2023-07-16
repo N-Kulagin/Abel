@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Eigen/Dense"
 #include "Base/MVNumericalMethod.h"
 
 class MVGradientDescent : public MVNumericalMethod {
