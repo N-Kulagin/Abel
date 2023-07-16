@@ -10,7 +10,7 @@ protected:
 	std::function<double(const Eigen::VectorXd& x)> g; // secondary convex non-differentiable objective, add me to copy constructor and = operator
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of the function f
 	std::function<void(Eigen::VectorXd&, double)> prox = [](Eigen::VectorXd& x, double step) {}; // proximal operator for step * g function
-	Eigen::VectorXd starting_point = Eigen::VectorXd();
+	Eigen::VectorXd starting_point;
 	double error; // convergence criterion
 	double step; // step length
 	double gamma = 0.5; // non-convex backtracking parameter
@@ -25,12 +25,8 @@ public:
 		const std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)>& f_grad, size_t dimension,
 		std::function<double(const Eigen::VectorXd& x)> g = [](const Eigen::VectorXd& x) { return 0.0; },
 		double tol = 1e-5, double step = 0.001, int max_iter = 100) :
-		f(f), g(g), f_grad(f_grad), error(-1.0), step(std::min(std::max(0.0, step) + 0.0001, 1.0)), MVNumericalMethod(dimension, tol, max_iter) {
-		if (starting_point.size() == 0) {
-			starting_point.resize(dimension);
-			starting_point.setConstant(1.0);
-		}
-	}
+		f(f), g(g), f_grad(f_grad), error(-1.0), step(std::min(std::max(0.0, step) + 0.0001, 1.0)), starting_point(Eigen::VectorXd(dimension)), MVNumericalMethod(dimension, tol, max_iter) {}
+	
 	MVGradientDescent(const MVGradientDescent& gr) : f(gr.f), g(gr.g), f_grad(gr.f_grad), prox(gr.prox), starting_point(gr.starting_point), error(gr.error),
 		step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep), MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.was_run, gr.iter_counter, gr.result) {}
 
@@ -158,17 +154,15 @@ public:
 	// \underset{u \in \mathbb{R}^n}{\arg \min}(\alpha g(u) + \frac{1}{2}||u-y_k||_2^2) = prox_{\alpha g}(y_k)
 	void setProx(const std::function<void(Eigen::VectorXd& x, double alpha)>& Prox) { prox = Prox; }
 
-	void setParams(double tol_ = 1e-5, size_t max_iter_ = 100, double step_ = 0.001, const Eigen::VectorXd& start = Eigen::VectorXd()) {
+	void setParams(double tol_ = 1e-5, size_t max_iter_ = 100, double step_ = 0.001) {
 		tol = std::max(1e-15, tol_);
 		max_iter = std::max(2, max_iter);
 		iter_counter = 0;
-		was_run = 0;
+		was_run = false;
 		step = std::min(std::max(0.0, step) + 0.0001, 1.0);
-		if (start.size() == starting_point.size()) {
-			starting_point = start;
-		}
 	}
 	void setStart(const Eigen::VectorXd& x) {
+		if (dimension != x.rows()) throw 1;
 		starting_point = x;
 		hasStartingPoint = true;
 	}
