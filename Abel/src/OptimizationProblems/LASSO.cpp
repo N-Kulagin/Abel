@@ -1,24 +1,9 @@
-#pragma once
-
-#include "MultiVarOptimization/MVGradientDescent.h"
+#include "pch.h"
+#include "OptimizationProblems/LASSO.h"
 #include "Prox/prox_l1.h"
 
-struct LASSO_Result {
-	Eigen::VectorXd result;
-	double error;
-	size_t niter;
-	double L;
-	
-	LASSO_Result(const Eigen::VectorXd& x, double err, size_t iter, double lip): result(x),error(err),niter(iter),L(lip) {}
-};
-
-// Solves LASSO problem, i. e. 0.5 * ||Ax-b||_2^2 + beta * ||x||_1 -> min
-// Inputs are matrix A, vector b, tolerance (measure of how well the problem is solved) and maximum number of iterations
-// Tolerance should be between 0 and 0.1
-// Can refine solution using least squares with respect to variables which are above the refine_level in absolute value
-// Solution is stored in the output struct, it also contains Lipschitz constant L (largest singular value of A^T * A)
-LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eigen::VectorXd& start_point, const double beta = 1.0, const double tol = 1e-7, 
-	const bool refine_sol = true, const double refine_level = 1e-10, const int max_iter = 500) {
+LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eigen::VectorXd& start_point, const double beta, const double tol,
+	const bool refine_sol, const double refine_level, const int max_iter) {
 
 	if (A.rows() != b.rows() || start_point.rows() != A.cols()) throw 1;
 
@@ -57,7 +42,7 @@ LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eig
 
 		for (size_t i = 0; i < indices.rows(); i++) // if result is bigger in abs than refine_level it's counted as non-zero
 		{
-			if (abs(out.result(i)) >= std::max(1e-15,refine_level)) { indices(index_counter) = i; ++index_counter; }
+			if (abs(out.result(i)) >= std::max(1e-15, refine_level)) { indices(index_counter) = i; ++index_counter; }
 		}
 
 		Eigen::MatrixXd B(A.rows(), index_counter); // create a submatrix related to non-zero components of the solution
