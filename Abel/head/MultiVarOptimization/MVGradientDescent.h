@@ -10,7 +10,6 @@ protected:
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of the function f
 	std::function<void(Eigen::VectorXd&, double)> prox; // proximal operator for step * g function
 	Eigen::VectorXd starting_point;
-	double error; // convergence criterion
 	double step; // step length
 	double gamma = 0.5; // non-convex backtracking parameter
 	double eta = 2.0; // backtracking parameter
@@ -49,6 +48,4 @@ public:
 	void toggleConstStep();
 
 	void toggleConvex();
-
-	double getError();
 };

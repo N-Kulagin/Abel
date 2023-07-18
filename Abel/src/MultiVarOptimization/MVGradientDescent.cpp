@@ -5,12 +5,12 @@ MVGradientDescent::MVGradientDescent(
 	const std::function<double(const Eigen::VectorXd& x)>& f, const std::function<void(Eigen::VectorXd& grad,
 	const Eigen::VectorXd& input)>& f_grad, size_t dimension, std::function<double(const Eigen::VectorXd& x)> g, 
 	double tol, double step, int max_iter) :
-	f(f), g(g), f_grad(f_grad), prox([](Eigen::VectorXd& x, double step) {}), error(-1.0), step(std::min(std::max(0.0, step) + 1e-4, 1.0)),
+	f(f), g(g), f_grad(f_grad), prox([](Eigen::VectorXd& x, double step) {}), step(std::min(std::max(0.0, step) + 1e-4, 1.0)),
 	starting_point(Eigen::VectorXd(dimension)), MVNumericalMethod(dimension, tol, max_iter) {}
 
 MVGradientDescent::MVGradientDescent(const MVGradientDescent& gr) : f(gr.f), g(gr.g), f_grad(gr.f_grad), prox(gr.prox), starting_point(gr.starting_point), 
-error(gr.error), step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep), hasStartingPoint(gr.hasStartingPoint),
-MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.was_run, gr.iter_counter, gr.result) {}
+step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep), hasStartingPoint(gr.hasStartingPoint),
+MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.was_run, gr.iter_counter, gr.error, gr.result) {}
 
 MVGradientDescent& MVGradientDescent::operator=(const MVGradientDescent& gr)
 {
@@ -154,10 +154,5 @@ void MVGradientDescent::toggleConstStep()
 void MVGradientDescent::toggleConvex()
 {
 	isConvex = isConvex ? false : true;
-}
-
-double MVGradientDescent::getError()
-{
-	return error;
 }
 
