@@ -3,5 +3,3 @@ Abel/src/main
 /Abel/Abel.vcxproj*
 bin/
 .vs/
-pch.h
-pch.cpp
