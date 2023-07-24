@@ -76,7 +76,7 @@ Eigen::VectorXd& MVNewton::getDual()
 
 void MVNewton::solve_Constrained()
 {
-	int A_rows = A.rows();
+	int A_rows = (int)A.rows();
 
 	Eigen::VectorXd x(dimension);
 	if (hasStart) x = starting_point;
