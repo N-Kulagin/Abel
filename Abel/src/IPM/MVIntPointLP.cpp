@@ -3,14 +3,15 @@
 
 
 MVIntPointLP::MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b, 
-	size_t dimension, double tol, int max_iter) : A(A), A_t(A.transpose()), b(b), c(c), 
-	dual_variables(Eigen::VectorXd(dimension + A.rows())), starting_point(Eigen::VectorXd(2*dimension + A.rows())), MVNumericalMethod(dimension, tol, max_iter) {}
+	size_t dimension, double tol, int max_iter) : A(A), A_t(A.transpose()), b(b), c(c), MVNumericalMethod(dimension, tol, max_iter) {}
 
 MVIntPointLP::MVIntPointLP(const MVIntPointLP& ip) : A(ip.A), A_t(ip.A_t), b(ip.b), c(ip.c), starting_point(ip.starting_point), hasStart(ip.hasStart), isDivergent(ip.isDivergent),
 dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.was_run,ip.iter_counter,ip.error,ip.result) {}
 
 MVIntPointLP& MVIntPointLP::operator=(const MVIntPointLP& ip)
 {
+	MVNumericalMethod::operator=(ip);
+
 	A = ip.A;
 	A_t = ip.A_t;
 	b = ip.b;
@@ -19,13 +20,7 @@ MVIntPointLP& MVIntPointLP::operator=(const MVIntPointLP& ip)
 	hasStart = ip.hasStart;
 	isDivergent = ip.isDivergent;
 	dual_variables = ip.dual_variables;
-	dimension = ip.dimension;
-	tol = ip.tol;
-	max_iter = ip.max_iter;
-	was_run = ip.was_run;
-	iter_counter = ip.iter_counter;
-	error = ip.error;
-	result = ip.result;
+
 	return *this;
 }
 
@@ -59,7 +54,7 @@ void MVIntPointLP::solve()
 int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::VectorXd& dx) const
 {
 	int index = -1;
-	double val = 2.0;
+	double val = -x(0)/dx(0);
 	double tmp = 2.0;
 
 	// find the index of smallest positive ratio -x(i)/dx(i) if all x(i) are always positive
@@ -68,7 +63,7 @@ int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::Ve
 	for (int i = 0; i < x.size(); i++)
 	{
 		tmp = -x(i) / dx(i);
-		if (dx(i) < 0 && tmp < val) {
+		if (dx(i) < 0 && tmp <= val) {
 			val = tmp;
 			index = i;
 		}
@@ -179,6 +174,7 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 		}
 	}
 	result = x; // copy answer to the problem to result and z,s to vector of dual variables
+	dual_variables = Eigen::VectorXd(dimension + A.rows());
 	dual_variables.block(0, 0, m, 1) = z;
 	dual_variables.block(m, 0, n, 1) = s;
 }
@@ -187,6 +183,7 @@ void MVIntPointLP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& z, 
 {
 	if (x.size() == dimension && z.size() == A.rows() && s.size() == dimension && x.minCoeff() >= 0 && s.minCoeff() >= 0) {
 		// if x,z,s are of correct dimension and x,s are elementwise non-negative - they're valid starting points
+		starting_point = Eigen::VectorXd(2 * dimension + A.rows());
 		hasStart = true;
 		was_run = false;
 		starting_point.block(0, 0, dimension, 1) = x;

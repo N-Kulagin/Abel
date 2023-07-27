@@ -15,6 +15,7 @@ protected:
 
 	MVNumericalMethod(size_t dimension, double tol = 0.01, int max_iter = 100, bool was_run = 0, int iter_counter = 0, double err = 0.0,
 		const Eigen::VectorXd& res = Eigen::VectorXd());
+	MVNumericalMethod& operator=(const MVNumericalMethod& nm);
 
 public:
 	virtual bool wasRun() const final;

@@ -4,7 +4,7 @@
 
 class MVIntPointLP : public MVNumericalMethod {
 
-private:
+protected:
 	bool hasStart = false;
 	bool isDivergent = false;
 
@@ -33,9 +33,10 @@ public:
 	Eigen::VectorXd& getDual();
 	bool isDiverging() const;
 
-private:
+protected:
 	int smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::VectorXd& dx) const;
+
+private:
 	void phase1(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s);
 	void phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s);
-
 };

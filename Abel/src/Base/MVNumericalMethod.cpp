@@ -10,6 +10,18 @@ MVNumericalMethod::MVNumericalMethod(size_t dimension, double tol, int max_iter,
 	}
 }
 
+MVNumericalMethod& MVNumericalMethod::operator=(const MVNumericalMethod& nm)
+{
+	tol = nm.tol;
+	error = nm.error;
+	max_iter = nm.max_iter;
+	iter_counter = nm.iter_counter;
+	dimension = nm.dimension;
+	result = nm.result;
+	was_run = nm.was_run;
+	return *this;
+}
+
 bool MVNumericalMethod::wasRun() const
 {
 	return was_run;
