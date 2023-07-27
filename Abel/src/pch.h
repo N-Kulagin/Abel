@@ -3,6 +3,7 @@
 #include "Base/MVNumericalMethod.h"
 #include "Base/SVNumericalMethod.h"
 #include "IPM/MVIntPointLP.h"
+#include "IPM/MVIntPointQP.h"
 #include "MultiVarOptimization/MVGradientDescent.h"
 #include "MultiVarOptimization/MVNewton.h"
 #include "OptimizationProblems/LASSO_Result.h"
