@@ -3,7 +3,9 @@
 
 
 MVIntPointLP::MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b, 
-	size_t dimension, double tol, int max_iter) : A(A), A_t(A.transpose()), b(b), c(c), MVNumericalMethod(dimension, tol, max_iter) {}
+	size_t dimension, double tol, int max_iter) : A(A), A_t(A.transpose()), b(b), c(c), MVNumericalMethod(dimension, tol, max_iter) {
+	if (A.cols() != dimension || A.rows() > dimension || b.rows() != A.rows() || c.rows() != dimension) throw 1;
+}
 
 MVIntPointLP::MVIntPointLP(const MVIntPointLP& ip) : A(ip.A), A_t(ip.A_t), b(ip.b), c(ip.c), isDivergent(ip.isDivergent),
 dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.was_run,ip.iter_counter,ip.error,ip.result,ip.starting_point,ip.hasStart) {}
@@ -22,7 +24,7 @@ MVIntPointLP& MVIntPointLP::operator=(const MVIntPointLP& ip)
 	return *this;
 }
 
-void MVIntPointLP::solve()
+void MVIntPointLP::solve() noexcept
 {
 	// Mehrotra's Predictor-Corrector Algorithm for Linear Programming
 	// Jorge Nocedal, Stephen Wright - Numerical Optimization, page 411
@@ -33,7 +35,6 @@ void MVIntPointLP::solve()
 	// where x is primal variable, z is dual variable related to equality constraints and s is dual variable related to inequality constraints 
 
 	if (was_run) return;
-	if (dimension != A.cols() || dimension < (size_t)A.rows()) throw 1;
 	Eigen::VectorXd x(A.cols());
 	Eigen::VectorXd z(A.rows());
 	Eigen::VectorXd s(A.cols());
@@ -52,7 +53,7 @@ void MVIntPointLP::solve()
 int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::VectorXd& dx) const
 {
 	int index = -1;
-	double val = -x(0)/dx(0);
+	double val = 1e+10; // problem if tmp > 0, but tmp > val
 	double tmp = 2.0;
 
 	// find the index of smallest positive ratio -x(i)/dx(i) if all x(i) are always positive
@@ -61,7 +62,7 @@ int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::Ve
 	for (int i = 0; i < x.size(); i++)
 	{
 		tmp = -x(i) / dx(i);
-		if (dx(i) < 0 && tmp <= val) {
+		if (tmp > 0 && tmp <= val) {
 			val = tmp;
 			index = i;
 		}
@@ -69,7 +70,7 @@ int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::Ve
 	return index;
 }
 
-void MVIntPointLP::phase1(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s)
+void MVIntPointLP::phase1(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s) noexcept
 {
 	Eigen::MatrixXd B = (A * A_t).inverse();
 	Eigen::VectorXd x_hat = A_t * (B * b); // find closest to the origin point satisfying Ax = b
@@ -86,7 +87,7 @@ void MVIntPointLP::phase1(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 	s = s_hat + delta_s_hat * ones;
 }
 
-void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s)
+void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s) noexcept
 {
 	int m = (int)A.rows();
 	int n = (int)A.cols();
@@ -166,7 +167,7 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 		error = mu; // measure error by surrogate duality gap
 
 		++iter_counter;
-		if (std::abs(error) >= 1e+20) { // if the error gets larger than 10^20 consider it a diverging situation and stop
+		if (std::abs(error) >= 1e+10) { // if the error gets larger than 10^20 consider it a diverging situation and stop
 			isDivergent = true;
 			break;
 		}
@@ -191,7 +192,7 @@ void MVIntPointLP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& z, 
 	else throw 1;
 }
 
-void MVIntPointLP::setParams(double tol_, size_t max_iter_) 
+void MVIntPointLP::setParams(double tol_, size_t max_iter_) noexcept
 {
 	tol = std::max(1e-15, tol_);
 	max_iter = std::max(2, max_iter);
@@ -199,12 +200,12 @@ void MVIntPointLP::setParams(double tol_, size_t max_iter_)
 	was_run = false;
 }
 
-Eigen::VectorXd& MVIntPointLP::getDual()
+Eigen::VectorXd& MVIntPointLP::getDual() noexcept
 {
 	return dual_variables; // returns vector (z,s) of dual variables
 }
 
-bool MVIntPointLP::isDiverging() const
+bool MVIntPointLP::isDiverging() const noexcept
 {
 	return isDivergent;
 }

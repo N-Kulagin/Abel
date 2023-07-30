@@ -36,7 +36,7 @@ size_t MVNumericalMethod::niter() const
 	return iter_counter;
 }
 
-void MVNumericalMethod::solve()
+void MVNumericalMethod::solve() noexcept
 {
 }
 

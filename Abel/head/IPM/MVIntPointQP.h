@@ -19,6 +19,6 @@ public:
 
 	MVIntPointQP& operator=(const MVIntPointQP& ip);
 
-	void solve() override;
-	void setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, const Eigen::VectorXd& y, const Eigen::VectorXd& z);
+	void solve() noexcept override;
+	void setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, const Eigen::VectorXd& z, const Eigen::VectorXd& y);
 };

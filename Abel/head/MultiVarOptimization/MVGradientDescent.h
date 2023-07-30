@@ -26,7 +26,7 @@ public:
 
 	MVGradientDescent& operator=(const MVGradientDescent& gr);
 
-	void solve() override;
+	void solve() noexcept override;
 
 	// prox operator must be passed with type "double" parameter because in proximal gradient descent 
 	// if you have a step \alpha and a function g(x) for which you want to compute proximal operator, it's the same as computing proximal gradient for alpha * g
@@ -39,11 +39,11 @@ public:
 	// \underset{u \in \mathbb{R}^n}{\arg \min}(\alpha g(u) + \frac{1}{2}||u-y_k||_2^2) = prox_{\alpha g}(y_k)
 	void setProx(const std::function<void(Eigen::VectorXd& x, double alpha)>& Prox);
 
-	void setParams(double tol_ = 1e-5, size_t max_iter_ = 100, double step_ = 0.001);
+	void setParams(double tol_ = 1e-5, size_t max_iter_ = 100, double step_ = 0.001) noexcept;
 
 	void setStart(const Eigen::VectorXd& x);
 
-	void toggleConstStep();
+	void toggleConstStep() noexcept;
 
-	void toggleConvex();
+	void toggleConvex() noexcept;
 };

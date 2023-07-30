@@ -23,17 +23,17 @@ public:
 
 	MVIntPointLP& operator=(const MVIntPointLP& ip);
 
-	void solve() override;
+	void solve() noexcept override;
 
 	void setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& z, const Eigen::VectorXd& s);
-	void setParams(double tol_ = 1e-10, size_t max_iter_ = 100);
-	Eigen::VectorXd& getDual();
-	bool isDiverging() const;
+	void setParams(double tol_ = 1e-10, size_t max_iter_ = 100) noexcept;
+	Eigen::VectorXd& getDual() noexcept;
+	bool isDiverging() const noexcept;
 
 protected:
 	int smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::VectorXd& dx) const;
 
 private:
-	void phase1(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s);
-	void phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s);
+	void phase1(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s) noexcept;
+	void phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s) noexcept;
 };

@@ -4,10 +4,7 @@
 MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& A, 
 	const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, size_t dimension, double tol, int max_iter) 
 	: G(G), B(B), B_t(B.transpose()), d(d), MVIntPointLP(c,A,b,dimension,tol,max_iter) {
-	int A_rows = (int)A.rows();
-	int B_rows = (int)B.rows();
-	if (G.rows() != dimension || G.cols() != dimension
-		|| B_rows > dimension || A.cols() != dimension || B.cols() != dimension || c.rows() != dimension || b.rows() != A_rows || d.rows() != B_rows) throw 1;
+	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows()) throw 1;
 }
 
 MVIntPointQP::MVIntPointQP(const MVIntPointQP& ip) : G(ip.G), B(ip.B), B_t(ip.B_t), d(ip.d), MVIntPointLP(ip) {}
@@ -24,18 +21,18 @@ MVIntPointQP& MVIntPointQP::operator=(const MVIntPointQP& ip)
 	return *this;
 }
 
-// minimize 0.5 * x^T G x + c^T x subject to Ax<=b, Bx=d
-// This transforms constraints into Ax+y=b, Bx=d, y >= 0
+// minimize 0.5 * x^T G x + c^T x subject to Ax=b, Bx<=d
+// This transforms constraints into Ax=b, Bx+y=d, y >= 0
 // used convention of variables is (x,l,z,y) where (x,y) are primal, (l,z) are dual variables with l >= 0
 // Jorge Nocedal, Stephen Wright Numerical Optimization p. 484 -- Predictor-Corrector Algorithm for QP
-void MVIntPointQP::solve()
+void MVIntPointQP::solve() noexcept
 {
 	if (was_run) return;
 
-	int m = (int)A.rows();
-	int n = (int)A.cols();
-	int k = (int)B.rows();
-	int p = (int)B.cols();
+	int m = (int)B.rows();
+	int n = (int)B.cols();
+	int k = (int)A.rows();
+	int p = (int)A.cols();
 
 	Eigen::VectorXd x(dimension);
 	Eigen::VectorXd l(m);
@@ -58,27 +55,27 @@ void MVIntPointQP::solve()
 	error = 1.0;
 
 	/*
-	KKT_Matrix = [G, A^T, B^T, 0, (dx)
-				  A,  0,   0,  I, (dl)
-				  B,  0,   0,  0, (dz)
+	KKT_Matrix = [G, B^T, A^T, 0, (dx)
+				  B,  0,   0,  I, (dl)
+				  A,  0,   0,  0, (dz)
 				  0,  Y,   0,  L] (dy)
 
 	where Y = diag(y), L = diag(L), I = identity
 	*/
 
 	Eigen::MatrixXd KKT_Matrix(dimension + 2 * m + k, dimension + 2 * m + k);
-	Eigen::VectorXd residual(2 * dimension + m + k);
-	Eigen::VectorXd solution(2 * dimension + m + k);
+	Eigen::VectorXd residual(dimension + 2 * m + k);
+	Eigen::VectorXd solution(dimension + 2 * m + k);
 	Eigen::PartialPivLU<Eigen::MatrixXd> dec(dimension + 2 * m + k);
 
 	KKT_Matrix.setZero();
 	KKT_Matrix.block(0, 0, dimension, dimension) = G;
-	KKT_Matrix.block(0, dimension, n, m) = A_t;
-	KKT_Matrix.block(0, dimension + m, p, k) = B_t;
-	KKT_Matrix.block(dimension, 0, m, n) = A;
-	KKT_Matrix.block(dimension + m, 0, k, p) = B;
+	KKT_Matrix.block(0, dimension, n, m) = B_t;
+	KKT_Matrix.block(0, dimension + m, p, k) = A_t;
+	KKT_Matrix.block(dimension, 0, m, n) = B;
+	KKT_Matrix.block(dimension + m, 0, k, p) = A;
 
-	KKT_Matrix.block(m, dimension + m + k, m, m) = Eigen::MatrixXd::Identity(m, m);
+	KKT_Matrix.block(dimension, dimension + m + k, m, m) = Eigen::MatrixXd::Identity(m, m);
 
 	// complementarity measure mu, step alpha, step in the affine direction alpha_aff, 
 	// primal and dual steps and coefficient sigma to measure how well should KKT system be approximated
@@ -93,9 +90,9 @@ void MVIntPointQP::solve()
 		KKT_Matrix.block(dimension + m + k, dimension, m, m) = y.asDiagonal();
 		KKT_Matrix.block(dimension + m + k, dimension + m + k, m, m) = l.asDiagonal(); // construct KKT matrix and residual right hand side
 
-		residual.block(0, 0, dimension, 1) = -(G * x + c + A_t * l + B_t * z);
-		residual.block(dimension, 0, m, 1) = -(A * x - b + y);
-		residual.block(dimension + m, 0, k, 1) = -(B * x - d);
+		residual.block(0, 0, dimension, 1) = -(G * x + c + B_t * l + A_t * z);
+		residual.block(dimension, 0, m, 1) = -(B * x - d + y);
+		residual.block(dimension + m, 0, k, 1) = -(A * x - b);
 		residual.block(dimension + m + k, 0, m, 1) = -(y.array() * l.array()); // compute affine scaling direction
 		if (residual.norm() >= 1e+10) { isDivergent = true; return; } // detect divergence if residual gets too high
 
@@ -174,19 +171,15 @@ void MVIntPointQP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, 
 	int B_rows = (int)B.rows();
 	if (l.minCoeff() < 0 || y.minCoeff() < 0) throw 1;
 	if (x.rows() != dimension 
-		|| x.cols() != 1 
-		|| l.rows() != A_rows
-		|| l.cols() != 1 
-		|| y.rows() != A_rows
-		|| y.cols() != 1 
-		|| z.rows() != B_rows
-		|| z.cols() != 1) throw 1;
+		|| l.rows() != B_rows
+		|| y.rows() != B_rows
+		|| z.rows() != A_rows) throw 1;
 
-	starting_point = Eigen::VectorXd(dimension + 2 * A_rows + B_rows);
+	starting_point = Eigen::VectorXd(dimension + 2 * B_rows + A_rows);
 	starting_point.block(0, 0, dimension, 1) = x;
-	starting_point.block(dimension, 0, A_rows, 1) = l;
-	starting_point.block(dimension + A_rows, 0, B_rows, 1) = z;
-	starting_point.block(dimension + A_rows + B_rows, 0, A_rows, 1) = y;
+	starting_point.block(dimension, 0, B_rows, 1) = l;
+	starting_point.block(dimension + B_rows, 0, A_rows, 1) = z;
+	starting_point.block(dimension + B_rows + A_rows, 0, B_rows, 1) = y;
 	was_run = false;
 	hasStart = true;
 }

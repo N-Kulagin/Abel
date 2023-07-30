@@ -25,7 +25,7 @@ MVGradientDescent& MVGradientDescent::operator=(const MVGradientDescent& gr)
 	return *this;
 }
 
-void MVGradientDescent::solve()
+void MVGradientDescent::solve() noexcept
 {
 	// FISTA algorithm with adaptive restarts and backtracking of Lipschitz constant L
 	// Reference:
@@ -122,7 +122,7 @@ void MVGradientDescent::setProx(const std::function<void(Eigen::VectorXd& x, dou
 	prox = Prox;
 }
 
-void MVGradientDescent::setParams(double tol_, size_t max_iter_, double step_)
+void MVGradientDescent::setParams(double tol_, size_t max_iter_, double step_) noexcept
 {
 	tol = std::max(1e-15, tol_);
 	max_iter = std::max(2, max_iter);
@@ -139,12 +139,12 @@ void MVGradientDescent::setStart(const Eigen::VectorXd& x)
 	was_run = false;
 }
 
-void MVGradientDescent::toggleConstStep()
+void MVGradientDescent::toggleConstStep() noexcept
 {
 	isConstStep = isConstStep ? false : true;
 }
 
-void MVGradientDescent::toggleConvex()
+void MVGradientDescent::toggleConvex() noexcept
 {
 	isConvex = isConvex ? false : true;
 }

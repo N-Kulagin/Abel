@@ -51,7 +51,7 @@ void MVNewton::setStart(const Eigen::VectorXd& x)
 	starting_point = x;
 }
 
-void MVNewton::solve()
+void MVNewton::solve() noexcept
 {
 	if (was_run) return;
 	iter_counter = 0;
@@ -66,7 +66,7 @@ Eigen::VectorXd& MVNewton::getDual()
 	return dual_variables;
 }
 
-void MVNewton::solve_Constrained()
+void MVNewton::solve_Constrained() noexcept
 {
 	int A_rows = (int)A.rows();
 
@@ -129,7 +129,7 @@ void MVNewton::solve_Constrained()
 	dual_variables = mu;
 }
 
-void MVNewton::solve_Unconstrained()
+void MVNewton::solve_Unconstrained() noexcept
 {
 	Eigen::VectorXd x(dimension);
 	if (hasStart) x = starting_point;

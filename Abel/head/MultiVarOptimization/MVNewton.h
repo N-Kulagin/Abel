@@ -34,11 +34,11 @@ public:
 	void setConstraints(const Eigen::MatrixXd& A, const Eigen::VectorXd& b);
 	void setStart(const Eigen::VectorXd& x);
 	void setParams(double tol = 1e-10, size_t max_iter = 100, double alpha = 0.1, double beta = 0.5);
-	void solve() override;
+	void solve() noexcept override;
 	Eigen::VectorXd& getDual();
 
 private:
-	void solve_Constrained();
-	void solve_Unconstrained();
+	void solve_Constrained() noexcept;
+	void solve_Unconstrained() noexcept;
 
 };

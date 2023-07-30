@@ -22,7 +22,7 @@ protected:
 public:
 	virtual bool wasRun() const final;
 	virtual size_t niter() const final;
-	virtual void solve();
+	virtual void solve() noexcept;
 	virtual Eigen::VectorXd& getResult() const final;
 	virtual double getError() const final;
 
