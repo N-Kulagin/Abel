@@ -8,7 +8,6 @@ private:
 	double alpha = 0.1; // backtracking progress parameter in (0;1/2)
 	double beta = 0.5; // backtracking step scaling factor in (0;1)
 	bool hasConstraints = false;
-	bool hasStart = false;
 
 	std::function<double(const Eigen::VectorXd& x)> f;
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad;
@@ -21,8 +20,6 @@ private:
 	Eigen::MatrixXd A; // matrix in the set of linear inequalities Ax=b
 	Eigen::MatrixXd A_t; // transposed
 	Eigen::VectorXd b; // vector in right hand side of the set of linear inequalities Ax=b
-
-	Eigen::VectorXd starting_point;
 
 public:
 	MVNewton(std::function<double(const Eigen::VectorXd& x)> f, 

@@ -9,14 +9,12 @@ protected:
 	std::function<double(const Eigen::VectorXd& x)> g; // secondary convex non-differentiable objective, add me to copy constructor and = operator
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of the function f
 	std::function<void(Eigen::VectorXd&, double)> prox; // proximal operator for step * g function
-	Eigen::VectorXd starting_point;
 	double step; // step length
 	double gamma = 0.5; // non-convex backtracking parameter
 	double eta = 2.0; // backtracking parameter
 	double L = 1.0; // Lipschitz constant
 	bool isConvex = false; // is the underlying problem convex?
 	bool isConstStep = false; // should the step size be constant (1/L)?
-	bool hasStartingPoint = false;
 
 public:
 	MVGradientDescent(const std::function<double(const Eigen::VectorXd& x)>& f,

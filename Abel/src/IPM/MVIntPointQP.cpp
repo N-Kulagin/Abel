@@ -190,34 +190,3 @@ void MVIntPointQP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, 
 	was_run = false;
 	hasStart = true;
 }
-
-void MVIntPointQP::setObjective(const Eigen::MatrixXd& G_, const Eigen::VectorXd& c_, double tol_, size_t max_iter_)
-{
-	if (dimension == G_.rows() && dimension == G_.cols()) {
-		G = G_;
-	}
-	if (dimension == c_.rows() && c_.cols() == 1) {
-		c = c_;
-	}
-	tol = std::min(std::max(0.0, tol_),1e-15);
-	max_iter = std::max((size_t)2, max_iter_);
-	was_run = false;
-}
-
-void MVIntPointQP::setConstraints(const Eigen::MatrixXd& A_, const Eigen::VectorXd& b_, const Eigen::MatrixXd& B_, const Eigen::VectorXd& d_)
-{
-	if (A_.cols() == dimension && A_.rows() == A.rows()) {
-		A = A_;
-	}
-	if (b_.rows() == A.rows() && b_.cols() == 1) {
-		b = b_;
-	}
-	if (B_.cols() == dimension && B_.rows() == B.rows()) {
-		B = B_;
-	}
-	if (d_.rows() == B.rows() && b_.cols() == 1) {
-		d = d_;
-	}
-	was_run = false;
-}
-

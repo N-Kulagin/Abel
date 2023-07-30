@@ -21,7 +21,4 @@ public:
 
 	void solve() override;
 	void setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, const Eigen::VectorXd& y, const Eigen::VectorXd& z);
-	void setObjective(const Eigen::MatrixXd& G_ = Eigen::MatrixXd(), const Eigen::VectorXd& c_ = Eigen::VectorXd(), double tol_ = 1e-10, size_t max_iter_ = 100);
-	void setConstraints(const Eigen::MatrixXd& A_ = Eigen::MatrixXd(), const Eigen::VectorXd& b_ = Eigen::VectorXd(),
-		const Eigen::MatrixXd& B_ = Eigen::MatrixXd(), const Eigen::VectorXd& d_ = Eigen::MatrixXd());
 };

@@ -5,8 +5,8 @@
 MVIntPointLP::MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b, 
 	size_t dimension, double tol, int max_iter) : A(A), A_t(A.transpose()), b(b), c(c), MVNumericalMethod(dimension, tol, max_iter) {}
 
-MVIntPointLP::MVIntPointLP(const MVIntPointLP& ip) : A(ip.A), A_t(ip.A_t), b(ip.b), c(ip.c), starting_point(ip.starting_point), hasStart(ip.hasStart), isDivergent(ip.isDivergent),
-dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.was_run,ip.iter_counter,ip.error,ip.result) {}
+MVIntPointLP::MVIntPointLP(const MVIntPointLP& ip) : A(ip.A), A_t(ip.A_t), b(ip.b), c(ip.c), isDivergent(ip.isDivergent),
+dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.was_run,ip.iter_counter,ip.error,ip.result,ip.starting_point,ip.hasStart) {}
 
 MVIntPointLP& MVIntPointLP::operator=(const MVIntPointLP& ip)
 {
@@ -16,8 +16,6 @@ MVIntPointLP& MVIntPointLP::operator=(const MVIntPointLP& ip)
 	A_t = ip.A_t;
 	b = ip.b;
 	c = ip.c;
-	starting_point = ip.starting_point;
-	hasStart = ip.hasStart;
 	isDivergent = ip.isDivergent;
 	dual_variables = ip.dual_variables;
 

@@ -6,20 +6,20 @@ MVNewton::MVNewton(
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad,
 	std::function<void(Eigen::MatrixXd& H, const Eigen::VectorXd& input)> f_hess, 
 	size_t dimension, double tol, int max_iter) : f(f), f_grad(f_grad), f_hess(f_hess), 
-	Hessian(Eigen::MatrixXd(dimension,dimension)), grad(Eigen::VectorXd(dimension)), dual_variables(Eigen::VectorXd(dimension)),
+	Hessian(Eigen::MatrixXd(dimension,dimension)), grad(Eigen::VectorXd(dimension)),
 	MVNumericalMethod(dimension, tol, max_iter) {}
 
-MVNewton::MVNewton(const MVNewton& n) : alpha(n.alpha), beta(n.beta), hasConstraints(n.hasConstraints), hasStart(n.hasStart),
+MVNewton::MVNewton(const MVNewton& n) : alpha(n.alpha), beta(n.beta), hasConstraints(n.hasConstraints),
 	f(n.f), f_grad(n.f_grad), f_hess(n.f_hess), Hessian(n.Hessian), grad(n.grad), dual_variables(n.dual_variables), 
-	A(n.A), A_t(n.A_t), b(n.b), starting_point(n.starting_point), 
-	MVNumericalMethod(n.dimension,n.tol,n.max_iter,n.was_run,n.iter_counter,n.error,n.result){}
+	A(n.A), A_t(n.A_t), b(n.b), 
+	MVNumericalMethod(n.dimension,n.tol,n.max_iter,n.was_run,n.iter_counter,n.error,n.result,n.starting_point,n.hasStart) {}
 
 MVNewton& MVNewton::operator=(const MVNewton& n)
 {
+	MVNumericalMethod::operator=(n);
 	alpha = n.alpha;
 	beta = n.beta;
 	hasConstraints = n.hasConstraints;
-	hasStart = n.hasStart;
 	f = n.f;
 	f_grad = n.f_grad;
 	f_hess = n.f_hess;
@@ -29,14 +29,6 @@ MVNewton& MVNewton::operator=(const MVNewton& n)
 	A = n.A;
 	A_t = n.A_t;
 	b = n.b;
-	starting_point = n.starting_point;
-	dimension = n.dimension;
-	tol = n.tol;
-	max_iter = n.max_iter;
-	was_run = n.was_run;
-	iter_counter = n.iter_counter;
-	error = n.error;
-	result = n.result;
 
 	return *this;
 }

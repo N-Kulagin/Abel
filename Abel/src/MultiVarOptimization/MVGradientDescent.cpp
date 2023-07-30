@@ -6,30 +6,22 @@ MVGradientDescent::MVGradientDescent(
 	const Eigen::VectorXd& input)>& f_grad, size_t dimension, std::function<double(const Eigen::VectorXd& x)> g, 
 	double tol, double step, int max_iter) :
 	f(f), g(g), f_grad(f_grad), prox([](Eigen::VectorXd& x, double step) {}), step(std::min(std::max(0.0, step) + 1e-4, 1.0)),
-	starting_point(Eigen::VectorXd(dimension)), MVNumericalMethod(dimension, tol, max_iter) {}
+	MVNumericalMethod(dimension, tol, max_iter) {}
 
-MVGradientDescent::MVGradientDescent(const MVGradientDescent& gr) : f(gr.f), g(gr.g), f_grad(gr.f_grad), prox(gr.prox), starting_point(gr.starting_point), 
-step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep), hasStartingPoint(gr.hasStartingPoint),
-MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.was_run, gr.iter_counter, gr.error, gr.result) {}
+MVGradientDescent::MVGradientDescent(const MVGradientDescent& gr) : f(gr.f), g(gr.g), f_grad(gr.f_grad), prox(gr.prox), 
+step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep),
+MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.was_run, gr.iter_counter, gr.error, gr.result, gr.starting_point, gr.hasStart) {}
 
 MVGradientDescent& MVGradientDescent::operator=(const MVGradientDescent& gr)
 {
+	MVNumericalMethod::operator=(gr);
 	f = gr.f;
 	g = gr.g;
 	f_grad = gr.f_grad;
 	prox = gr.prox;
-	starting_point = gr.starting_point;
-	error = gr.error;
 	step = gr.step;
-	tol = gr.tol;
-	max_iter = gr.max_iter;
-	iter_counter = gr.iter_counter;
-	dimension = gr.dimension;
-	result = gr.result;
-	was_run = gr.was_run;
 	isConvex = gr.isConvex;
 	isConstStep = gr.isConstStep;
-	hasStartingPoint = gr.hasStartingPoint;
 	return *this;
 }
 
@@ -41,7 +33,7 @@ void MVGradientDescent::solve()
 	// - Lipschitz constant backtracking due to "Amir Beck, First-Order Methods in Optimization" Chapter 10, p. [10,15,23] - https://archive.siam.org/books/mo25/
 
 	if (was_run) { return; }
-	if (!hasStartingPoint) { starting_point.setRandom(); }
+	if (!hasStart) { starting_point.setRandom(); }
 
 	// variables
 	Eigen::VectorXd x = starting_point;
@@ -143,7 +135,8 @@ void MVGradientDescent::setStart(const Eigen::VectorXd& x)
 {
 	if (dimension != x.rows()) throw 1;
 	starting_point = x;
-	hasStartingPoint = true;
+	hasStart = true;
+	was_run = false;
 }
 
 void MVGradientDescent::toggleConstStep()

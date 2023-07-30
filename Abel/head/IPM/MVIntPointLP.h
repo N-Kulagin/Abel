@@ -5,7 +5,6 @@
 class MVIntPointLP : public MVNumericalMethod {
 
 protected:
-	bool hasStart = false;
 	bool isDivergent = false;
 
 	Eigen::VectorXd dual_variables; // vector of dual variables
@@ -14,8 +13,6 @@ protected:
 	Eigen::MatrixXd A_t; // transposed
 	Eigen::VectorXd b; // vector in right hand side of the set of linear equalities Ax=b
 	Eigen::VectorXd c; // vector in the objective function
-
-	Eigen::VectorXd starting_point;
 
 public:
 
