@@ -139,11 +139,12 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 		index_primal = smallest_ratio_index(x, solution.block(0, 0, n, 1)); // dx
 		index_dual = smallest_ratio_index(s, solution.block(n + m, 0, n, 1)); // ds
 
-		// if index is -1 use affine step = 1.0, otherwise use affine step equal to negative ratio at the index 
-		alpha_aff_primal = std::min(1.0, (index_primal == -1) ? 1.0 : -x(index_primal) / solution(index_primal));
-		alpha_aff_dual = std::min(1.0, (index_dual == -1) ? 1.0 : -s(index_dual) / solution(index_dual + n + m));
-		index_primal = -1;
-		index_dual = -1;
+		eta = 1.0 - 1.0 / (10.0 + pow(iter_counter, 2.0)); // eta_k = 1 - 1/(10+k^2)
+
+		// if index is -1 use affine step = 1.0, otherwise use affine step equal to negative ratio at the index
+		// multiply by eta to prevent mu_aff from approaching 0 too quickly
+		alpha_aff_primal = eta * std::min(1.0, (index_primal == -1) ? 1.0 : -x(index_primal) / solution(index_primal));
+		alpha_aff_dual = eta * std::min(1.0, (index_dual == -1) ? 1.0 : -s(index_dual) / solution(index_dual + n + m));
 
 		// surrogate duality gap
 		mu = x.dot(s) / n;
@@ -156,9 +157,11 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 		residual.block(n + m, 0, n, 1) = -(x.array() * s.array() + solution.block(0, 0, n, 1).array() * solution.block(n + m, 0, n, 1).array() - sigma * mu);
 		solution = dec.solve(residual);
 
-		eta = 1.0 - 1.0 / (10.0 + pow(iter_counter, 2.0)); // eta_k = 1 - 1/(10+k^2)
-		alpha_primal = std::min(1.0, eta * alpha_aff_primal); // compute primal-dual corrector steps
-		alpha_dual = std::min(1.0, eta * alpha_aff_dual);
+		index_primal = smallest_ratio_index(x, solution.block(0, 0, n, 1));
+		index_dual = smallest_ratio_index(s, solution.block(n + m, 0, n, 1));
+
+		alpha_primal = std::min(1.0, eta * (index_primal == -1) ? 1.0 : -x(index_primal) / solution(index_primal)); // compute primal-dual corrector steps
+		alpha_dual = std::min(1.0, eta * (index_dual == -1) ? 1.0 : -s(index_dual) / solution(index_dual + n + m));
 
 		x += alpha_primal * solution.block(0, 0, n, 1); // make a step in the corrected direction
 		z += alpha_dual * solution.block(n, 0, m, 1);
