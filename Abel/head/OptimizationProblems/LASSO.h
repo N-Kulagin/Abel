@@ -10,3 +10,6 @@
 // Solution is stored in the output struct, it also contains Lipschitz constant L (largest singular value of A^T * A)
 LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eigen::VectorXd& start_point, const double beta = 1.0, const double tol = 1e-7,
 	const bool refine_sol = true, const double refine_level = 1e-10, const int max_iter = 500);
+
+LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const double beta = 1.0, const double tol = 1e-7,
+	const bool refine_sol = true, const double refine_level = 1e-10, const int max_iter = 500);

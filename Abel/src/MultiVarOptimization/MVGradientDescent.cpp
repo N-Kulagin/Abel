@@ -33,7 +33,7 @@ void MVGradientDescent::solve() noexcept
 	// - Lipschitz constant backtracking due to "Amir Beck, First-Order Methods in Optimization" Chapter 10, p. [10,15,23] - https://archive.siam.org/books/mo25/
 
 	if (was_run) { return; }
-	if (!hasStart) { starting_point.setRandom(); }
+	if (!hasStart) { starting_point = Eigen::VectorXd(dimension); starting_point.setRandom(); }
 
 	// variables
 	Eigen::VectorXd x = starting_point;
