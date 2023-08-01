@@ -7,14 +7,6 @@ LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eig
 
 	if (A.rows() != b.rows()) throw 1;
 
-	Eigen::VectorXd start(A.cols());
-	if (start_point.size() == 0) {
-		start.setRandom();
-	}
-	else {
-		start = start_point;
-	}
-
 	double beta_safe = std::max(0.0, beta);
 
 	auto f = [&A, &b](const Eigen::VectorXd& x) {
@@ -35,7 +27,7 @@ LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eig
 	double L = pow(A.operatorNorm(), 2.0);
 
 	MVGradientDescent gr(f, f_grad, A.cols(), g, tol, 1.0 / L, max_iter);
-	gr.setStart(start);
+	if (start_point.size() != 0) gr.setStart(start_point);
 	gr.setProx(prox);
 	gr.toggleConstStep();
 	gr.toggleConvex();

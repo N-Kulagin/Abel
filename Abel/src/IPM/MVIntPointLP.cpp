@@ -48,7 +48,7 @@ void MVIntPointLP::solve() noexcept
 	error = 1.0;
 	phase2(x, z, s); // runs Mehrotra's predictor-corrector algorithm on starting point (x,z,s)
 	was_run = true;
-}
+ }
 
 int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::VectorXd& dx) const
 {
@@ -176,7 +176,7 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 		}
 	}
 	result = x; // copy answer to the problem to result and z,s to vector of dual variables
-	dual_variables = Eigen::VectorXd(dimension + A.rows());
+	dual_variables = Eigen::VectorXd(dimension + m);
 	dual_variables.block(0, 0, m, 1) = z;
 	dual_variables.block(m, 0, n, 1) = s;
 }
