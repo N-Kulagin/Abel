@@ -10,6 +10,8 @@
 #include "OptimizationProblems/LASSO.h"
 #include "OptimizationProblems/lprog.h"
 #include "OptimizationProblems/lprog_Result.h"
+#include "OptimizationProblems/qprog.h"
+#include "OptimizationProblems/qprog_Result.h"
 #include "Projections/affine.h"
 #include "Projections/ball_l1.h"
 #include "Projections/ball_l2.h"
