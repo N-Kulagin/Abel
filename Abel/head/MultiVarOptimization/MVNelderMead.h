@@ -25,4 +25,5 @@ public:
 private:
 	int findSecondWorst(const Eigen::ArrayXd& f_vals, double abs_max, int dimension);
 	void findMaxMin(const Eigen::ArrayXd& f_vals, double& abs_max, double& abs_min, int& worstVertexIndex, int& bestVertexIndex, int dimension);
+	void shrinkAndRecalculate(Eigen::MatrixXd& x, Eigen::ArrayXd& f_vals, double& abs_max, double& abs_min, int& worstVertexIndex, int& bestVertexIndex, int dimension);
 };

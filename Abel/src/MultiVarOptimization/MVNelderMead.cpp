@@ -41,6 +41,7 @@ void MVNelderMead::solve() noexcept
 	double f_contraction; // function value at contraction point
 	double f_secondWorst; // second largest function value
 	double n = dimension; // dimension of the problem
+	bool flag = false; // used for optimization purposes
 	iter_counter = 0;
 
 	for (size_t i = 0; i < n+1; i++)
@@ -59,13 +60,13 @@ void MVNelderMead::solve() noexcept
 		error = sqrt(((f_vals - val).matrix().squaredNorm()) / (n + 1.0));
 		if (error < tol) break;
 
-		reflection = (1.0 + alpha) * centerOfMass - alpha * x.col(worstVertexIndex);
+		reflection = (1.0 + alpha) * centerOfMass - alpha * x.col(worstVertexIndex); // reflection step
 		f_reflection = f(reflection);
 		f_secondWorst = f_vals(secondWorstVertexIndex);
 		if (f_reflection <= abs_min) {
-			stretching = (1.0 - gamma) * centerOfMass + gamma * reflection;
+			stretching = (1.0 + alpha * gamma) * centerOfMass - (alpha * gamma) * reflection; // expansion step
 			f_stretching = f(stretching);
-			if (f_stretching < abs_min) {
+			if (f_stretching < f_reflection) {
 				x.col(worstVertexIndex) = stretching;
 				abs_min = f_stretching;
 				f_vals(worstVertexIndex) = f_stretching;
@@ -78,39 +79,40 @@ void MVNelderMead::solve() noexcept
 			abs_max = f_secondWorst;
 			bestVertexIndex = worstVertexIndex;
 			worstVertexIndex = secondWorstVertexIndex;
-			secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
-		}
-		else if (f_secondWorst < f_reflection && f_reflection <= abs_max) {
-			contraction = (1.0 - beta) * centerOfMass + beta * x.col(worstVertexIndex);
-			f_contraction = f(contraction);
-			x.col(worstVertexIndex) = contraction;
-			f_vals(worstVertexIndex) = f_contraction;
-			findMaxMin(f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1);
-			secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
+			flag = true; // flag indicates that this step was used, hence we can optimize and not search for max and min
 		}
 		else if (abs_min < f_reflection && f_reflection <= f_secondWorst) {
 			x.col(worstVertexIndex) = reflection;
 			f_vals(worstVertexIndex) = f_reflection;
-			findMaxMin(f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1);
-			secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
+		}
+		else if (f_secondWorst < f_reflection && f_reflection <= abs_max) {
+			contraction = (1.0 + alpha * beta) * centerOfMass - alpha * beta * x.col(worstVertexIndex); // outside contraction
+			f_contraction = f(contraction);
+			if (f_contraction < f_reflection) {
+				x.col(worstVertexIndex) = contraction;
+				f_vals(worstVertexIndex) = f_contraction;
+			}
+			else {
+				shrinkAndRecalculate(x, f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1); // shrink simplex and find largest and smallest value at new verticies
+				secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
+			}
 		}
 		else {
-			for (size_t i = 0; i < n + 1; i++)
-			{
-				x.col(i) = (1.0 - delta) * x.col(bestVertexIndex) + delta * x.col(i);
+			contraction = (1.0 - beta) * centerOfMass + beta * x.col(worstVertexIndex); // inside contraction
+			f_contraction = f(contraction);
+			if (f_contraction < abs_max) {
+				x.col(worstVertexIndex) = contraction;
+				f_vals(worstVertexIndex) = f_contraction;
 			}
-			val = f(x.col(0));
-			abs_min = val;
-			abs_max = val;
-			for (size_t i = 0; i < n + 1; i++)
-			{
-				val = f(x.col(i));
-				if (val <= abs_min) { abs_min = val; bestVertexIndex = i; } // compute values of the function at verticies and determine index of vertex with largest/smallest value
-				if (val >= abs_max) { abs_max = val; worstVertexIndex = i; }
-				f_vals(i) = val;
+			else {
+				shrinkAndRecalculate(x, f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1);
 			}
-			secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
 		}
+		if (!flag) { // find new largest, second largest and smallest function value at verticies
+			findMaxMin(f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1);
+		}
+		secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
+		flag = false;
 		++iter_counter;
 	}
 	result = x.col(bestVertexIndex);
@@ -150,7 +152,25 @@ void MVNelderMead::findMaxMin(const Eigen::ArrayXd& f_vals, double& abs_max, dou
 	for (size_t i = 0; i < dimension; i++)
 	{
 		val = f_vals(i);
+		if (val <= abs_min) { abs_min = val; bestVertexIndex = i; }
+		if (val >= abs_max) { abs_max = val; worstVertexIndex = i; }
+	}
+}
+
+void MVNelderMead::shrinkAndRecalculate(Eigen::MatrixXd& x, Eigen::ArrayXd& f_vals, double& abs_max, double& abs_min, int& worstVertexIndex, int& bestVertexIndex, int dimension)
+{
+	for (size_t i = 0; i < dimension; i++)
+	{
+		x.col(i) = (1.0 - delta) * x.col(bestVertexIndex) + delta * x.col(i);
+	}
+	double val = f(x.col(0));
+	abs_min = val;
+	abs_max = val;
+	for (size_t i = 0; i < dimension; i++)
+	{
+		val = f(x.col(i));
 		if (val <= abs_min) { abs_min = val; bestVertexIndex = i; } // compute values of the function at verticies and determine index of vertex with largest/smallest value
 		if (val >= abs_max) { abs_max = val; worstVertexIndex = i; }
+		f_vals(i) = val;
 	}
 }
