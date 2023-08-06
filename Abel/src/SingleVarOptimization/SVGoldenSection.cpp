@@ -11,12 +11,7 @@ SVGoldenSection& SVGoldenSection::operator=(const SVGoldenSection& g)
 	f = g.f;
 	lb = g.lb;
 	ub = g.ub;
-	tol = g.tol;
-	max_iter = g.max_iter;
-	iter_counter = g.iter_counter;
-	was_run = g.was_run;
-	error = g.error;
-	result = g.result;
+	SVNumericalMethod::operator=(g);
 	return *this;
 }
 

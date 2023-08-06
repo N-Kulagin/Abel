@@ -26,7 +26,7 @@ void SVNewtonGlobal::solve()
 	double x_cur = x_prev;
 
 	double f_prev = f(x_prev);
-	double f_cur = f(x_cur);
+	double f_cur = f_prev;
 
 	double f_prime_prev = f_prime(x_prev);
 
@@ -47,12 +47,12 @@ void SVNewtonGlobal::solve()
 	while (error > tol && iter_counter < max_iter)
 	{
 		step = 1.0;
-		f_prev = f(x_prev);
+		f_prev = (iter_counter == 1) ? f(x_prev) : f_cur;
 		f_prime_prev = f_prime(x_prev);
 		x_cur = x_prev - step * f_prev / f_prime_prev;
 		f_cur = f(x_cur);
 
-		while (abs(f_cur) >= abs(f_prev))
+		while (abs(f_cur) >= abs(f_prev) && step >= 1e-15)
 		{
 			step /= 2.0;
 			x_cur = x_prev - step * f_prev / f_prime_prev;

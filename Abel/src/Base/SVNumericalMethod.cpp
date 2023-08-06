@@ -6,6 +6,17 @@ SVNumericalMethod::SVNumericalMethod(double tol, size_t max_iter, bool was_run, 
 {
 }
 
+SVNumericalMethod& SVNumericalMethod::operator=(const SVNumericalMethod& nm)
+{
+	tol = nm.tol;
+	max_iter = nm.max_iter;
+	iter_counter = nm.iter_counter;
+	was_run = nm.was_run;
+	error = nm.error;
+	result = nm.result;
+	return *this;
+}
+
 bool SVNumericalMethod::wasRun() const
 {
 	return was_run;

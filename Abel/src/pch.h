@@ -6,7 +6,7 @@
 #include "IPM/MVIntPointQP.h"
 #include "MultiVarOptimization/MVGradientDescent.h"
 #include "MultiVarOptimization/MVNewton.h"
-//#include "MultiVarOptimization/MVNelderMead.h"
+#include "MultiVarOptimization/MVNelderMead.h"
 #include "OptimizationProblems/LASSO_Result.h"
 #include "OptimizationProblems/LASSO.h"
 #include "OptimizationProblems/lprog.h"

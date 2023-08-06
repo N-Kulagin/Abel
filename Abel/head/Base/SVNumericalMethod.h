@@ -11,6 +11,7 @@ protected:
 	bool was_run;
 
 	SVNumericalMethod(double tol = 0.01, size_t max_iter = 100, bool was_run = 0, size_t iter_counter = 0, double result = 0.0, double error = 0.0);
+	SVNumericalMethod& operator=(const SVNumericalMethod& nm);
 
 public:
 	SVNumericalMethod() = delete;

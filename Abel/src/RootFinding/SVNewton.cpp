@@ -12,15 +12,10 @@ SVNewton& SVNewton::operator=(const SVNewton& n)
 {
 	f = n.f;
 	f_prime = n.f_prime;
-	tol = n.tol;
 	heuristic = n.heuristic;
-	max_iter = n.max_iter;
-	iter_counter = n.iter_counter;
 	starting_point = n.starting_point;
-	was_run = n.was_run;
-	result = n.result;
 	multiplicity = n.multiplicity;
-	error = n.error;
+	SVNumericalMethod::operator=(n);
 
 	return *this;
 }
