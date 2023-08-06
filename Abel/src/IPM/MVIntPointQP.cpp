@@ -2,8 +2,8 @@
 #include "IPM/MVIntPointQP.h"
 
 MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& A, 
-	const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, size_t dimension, double tol, int max_iter) 
-	: G(G), B(B), B_t(B.transpose()), d(d), MVIntPointLP(c,A,b,dimension,tol,max_iter) {
+	const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, size_t dimension, double tol, size_t max_iter) 
+	: G(&G), B(&B), B_t(B.transpose()), d(&d), MVIntPointLP(c,A,b,dimension,tol,max_iter) {
 	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows()) throw 1;
 }
 
@@ -29,10 +29,11 @@ void MVIntPointQP::solve() noexcept
 {
 	if (was_run) return;
 
-	int m = (int)B.rows();
-	int n = (int)B.cols();
-	int k = (int)A.rows();
-	int p = (int)A.cols();
+	int m = (int)(*B).rows();
+	int n = (int)(*B).cols();
+	int k = (int)(*A).rows();
+	int p = (int)(*A).cols();
+	int dimension = MVNumericalMethod::dimension;
 
 	Eigen::VectorXd x(dimension);
 	Eigen::VectorXd l(m);
@@ -69,11 +70,11 @@ void MVIntPointQP::solve() noexcept
 	Eigen::PartialPivLU<Eigen::MatrixXd> dec(dimension + 2 * m + k);
 
 	KKT_Matrix.setZero();
-	KKT_Matrix.block(0, 0, dimension, dimension) = G;
+	KKT_Matrix.block(0, 0, dimension, dimension) = *G;
 	KKT_Matrix.block(0, dimension, n, m) = B_t;
 	KKT_Matrix.block(0, dimension + m, p, k) = A_t;
-	KKT_Matrix.block(dimension, 0, m, n) = B;
-	KKT_Matrix.block(dimension + m, 0, k, p) = A;
+	KKT_Matrix.block(dimension, 0, m, n) = *B;
+	KKT_Matrix.block(dimension + m, 0, k, p) = *A;
 
 	KKT_Matrix.block(dimension, dimension + m + k, m, m) = Eigen::MatrixXd::Identity(m, m);
 
@@ -90,9 +91,9 @@ void MVIntPointQP::solve() noexcept
 		KKT_Matrix.block(dimension + m + k, dimension, m, m) = y.asDiagonal();
 		KKT_Matrix.block(dimension + m + k, dimension + m + k, m, m) = l.asDiagonal(); // construct KKT matrix and residual right hand side
 
-		residual.block(0, 0, dimension, 1) = -(G * x + c + B_t * l + A_t * z);
-		residual.block(dimension, 0, m, 1) = -(B * x - d + y);
-		residual.block(dimension + m, 0, k, 1) = -(A * x - b);
+		residual.block(0, 0, dimension, 1) = -(*G * x + *c + B_t * l + A_t * z);
+		residual.block(dimension, 0, m, 1) = -(*B * x - *d + y);
+		residual.block(dimension + m, 0, k, 1) = -(*A * x - *b);
 		residual.block(dimension + m + k, 0, m, 1) = -(y.array() * l.array()); // compute affine scaling direction
 		if (residual.norm() >= 1e+10) { isDivergent = true; return; } // detect divergence if residual gets too high
 
@@ -167,8 +168,8 @@ void MVIntPointQP::solve() noexcept
 void MVIntPointQP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, const Eigen::VectorXd& z, const Eigen::VectorXd& y)
 {
 	// (x,lambda,z,y)
-	int A_rows = (int)A.rows();
-	int B_rows = (int)B.rows();
+	int A_rows = (int)(*A).rows();
+	int B_rows = (int)(*B).rows();
 	if (l.minCoeff() < 0 || y.minCoeff() < 0) throw 1;
 	if (x.rows() != dimension 
 		|| l.rows() != B_rows

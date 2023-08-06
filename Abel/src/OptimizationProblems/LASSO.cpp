@@ -40,7 +40,7 @@ LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eig
 		Eigen::VectorXi indices(out.result.rows()); // vector of indices corresponding to non-zero components
 		size_t index_counter = 0;
 
-		for (size_t i = 0; i < indices.rows(); i++) // if result is bigger in abs than refine_level it's counted as non-zero
+		for (int i = 0; i < indices.rows(); i++) // if result is bigger in abs than refine_level it's counted as non-zero
 		{
 			if (abs(out.result(i)) >= std::max(1e-15, refine_level)) { indices(index_counter) = i; ++index_counter; }
 		}

@@ -38,9 +38,9 @@ void MVNewton::setConstraints(const Eigen::MatrixXd& A_mat, const Eigen::VectorX
 	if (A_mat.cols() != dimension || b_vec.rows() != A_mat.rows() || A_mat.rows() > A_mat.cols()) throw 1;
 	hasConstraints = true;
 	was_run = false;
-	A = A_mat;
-	A_t = A.transpose();
-	b = b_vec;
+	A = &A_mat;
+	A_t = A_mat.transpose();
+	b = &b_vec;
 }
 
 void MVNewton::setStart(const Eigen::VectorXd& x)
@@ -68,7 +68,7 @@ Eigen::VectorXd& MVNewton::getDual()
 
 void MVNewton::solve_Constrained() noexcept
 {
-	int A_rows = (int)A.rows();
+	int A_rows = (int)(*A).rows();
 
 	Eigen::VectorXd x(dimension);
 	if (hasStart) x = starting_point;
@@ -87,7 +87,7 @@ void MVNewton::solve_Constrained() noexcept
 	zero.setZero();
 
 	KKT_Matrix.block(0, dimension, dimension, A_rows) = A_t;
-	KKT_Matrix.block(dimension, 0, A_rows, dimension) = A;
+	KKT_Matrix.block(dimension, 0, A_rows, dimension) = *A;
 	KKT_Matrix.block(dimension, dimension, A_rows, A_rows) = zero;
 
 	double step = 1.0;
@@ -97,7 +97,7 @@ void MVNewton::solve_Constrained() noexcept
 			f_grad(grad, x);
 
 			residual.block(0, 0, dimension, 1) = -(grad + A_t * mu);
-			residual.block(dimension, 0, A_rows, 1) = -(A * x - b);
+			residual.block(dimension, 0, A_rows, 1) = -(*A * x - *b);
 		}
 		f_hess(Hessian, x);
 
@@ -117,7 +117,7 @@ void MVNewton::solve_Constrained() noexcept
 			mu = mu_prev + step * solution.block(dimension, 0, A_rows, 1);
 			f_grad(grad, x);
 			residual.block(0, 0, dimension, 1) = -(grad + A_t * mu);
-			residual.block(dimension, 0, A_rows, 1) = -(A * x - b);
+			residual.block(dimension, 0, A_rows, 1) = -(*A * x - *b);
 
 		} while (residual.norm() > (1.0 - alpha * step) * error);
 
@@ -165,7 +165,7 @@ void MVNewton::solve_Unconstrained() noexcept
 void MVNewton::setParams(double tol_, size_t max_iter_, double alpha_, double beta_)
 {
 	tol = std::max(1e-15, tol_);
-	max_iter = std::max(2, max_iter);
+	max_iter = std::max((size_t)2, max_iter);
 	alpha = std::min(std::max(1e-10,alpha_),0.499);
 	beta = std::min(std::max(1e-3,beta_),0.999);
 	iter_counter = 0;

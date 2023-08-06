@@ -17,9 +17,9 @@ private:
 	Eigen::VectorXd grad; // gradient of the function
 	Eigen::VectorXd dual_variables; // vector of dual variables
 
-	Eigen::MatrixXd A; // matrix in the set of linear inequalities Ax=b
+	const Eigen::MatrixXd* A = nullptr; // matrix in the set of linear inequalities Ax=b
 	Eigen::MatrixXd A_t; // transposed
-	Eigen::VectorXd b; // vector in right hand side of the set of linear inequalities Ax=b
+	const Eigen::VectorXd* b = nullptr; // vector in right hand side of the set of linear inequalities Ax=b
 
 public:
 	MVNewton(std::function<double(const Eigen::VectorXd& x)> f, 

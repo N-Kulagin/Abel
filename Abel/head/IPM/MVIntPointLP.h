@@ -9,15 +9,15 @@ protected:
 
 	Eigen::VectorXd dual_variables; // vector of dual variables
 
-	Eigen::MatrixXd A; // matrix in the set of linear equalities Ax=b
+	const Eigen::MatrixXd* A; // matrix in the set of linear equalities Ax=b
 	Eigen::MatrixXd A_t; // transposed
-	Eigen::VectorXd b; // vector in right hand side of the set of linear equalities Ax=b
-	Eigen::VectorXd c; // vector in the objective function
+	const Eigen::VectorXd* b; // vector in right hand side of the set of linear equalities Ax=b
+	const Eigen::VectorXd* c; // vector in the objective function
 
 public:
 
 	MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b,
-		size_t dimension, double tol = 1e-10, int max_iter = 100);
+		size_t dimension, double tol = 1e-10, size_t max_iter = 100);
 
 	MVIntPointLP(const MVIntPointLP& ip);
 

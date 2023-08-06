@@ -3,12 +3,13 @@
 
 MVNelderMead::MVNelderMead(std::function<double(const Eigen::VectorXd& x)> f, size_t dimension, double tol, int max_iter) : f(f), MVNumericalMethod(dimension, tol, max_iter) {}
 
-MVNelderMead::MVNelderMead(const MVNelderMead& nm) : f(nm.f), MVNumericalMethod(nm.dimension, nm.tol, nm.max_iter, nm.was_run, nm.iter_counter, nm.error,
+MVNelderMead::MVNelderMead(const MVNelderMead& nm) : f(nm.f), x(nm.x), MVNumericalMethod(nm.dimension, nm.tol, nm.max_iter, nm.was_run, nm.iter_counter, nm.error,
 	nm.result, nm.starting_point, nm.hasStart) {}
 
 MVNelderMead MVNelderMead::operator=(const MVNelderMead& nm)
 {
 	f = nm.f;
+	x = nm.x;
 	MVNumericalMethod::operator=(nm);
 	return *this;
 }
@@ -17,18 +18,31 @@ void MVNelderMead::solve() noexcept
 {
 	if (was_run) return;
 
-	Eigen::MatrixXd x(dimension, dimension + 1); // simplex verticies
+	if (hasStart) {
+		solve_(*x);
+	}
+	else {
+		Eigen::MatrixXd x(dimension, dimension + 1); // simplex verticies
+		x.setRandom();
+		x *= randomCoeff; // spread the randomized verticies with coefficient randomCoeff
+		solve_(x);
+	}
+	was_run = true;
+}
+
+void MVNelderMead::solve_(Eigen::MatrixXd& x)
+{
+	// Nelder-Mead minimization algorithm
+	// https://www.scilab.org/sites/default/files/neldermead.pdf
+	// Above mentioned paper uses following parameter convention (in paper vs this implmenetation):
+	// rho = alpha, chi = gamma, gamma-bar = beta, sigma = delta
+	// Stopping criterion used:  error = sqrt( 1/(n+1) * sum_i (f(x^i) - f(x^S))^2 ), where x^S - center of mass
+
 	Eigen::VectorXd centerOfMass(dimension); // center of mass
 	Eigen::VectorXd reflection(dimension); // reflection point
 	Eigen::VectorXd stretching(dimension); // stretching point
 	Eigen::VectorXd contraction(dimension); // contraction point
 	Eigen::ArrayXd f_vals(dimension + 1); // array of function values of the simplex
-
-	if (hasStart){} // TODO: add a method to specify starting simplex
-	else {
-		x.setRandom();
-		x *= randomCoeff; // spread the randomized verticies with coefficient randomCoeff
-	}
 
 	int bestVertexIndex = 0;
 	int worstVertexIndex = 0;
@@ -40,22 +54,22 @@ void MVNelderMead::solve() noexcept
 	double f_stretching; // function value at stretching point
 	double f_contraction; // function value at contraction point
 	double f_secondWorst; // second largest function value
-	double n = dimension; // dimension of the problem
+	double n = (double)dimension; // dimension of the problem
 	bool flag = false; // used for optimization purposes
 	iter_counter = 0;
 
-	for (size_t i = 0; i < n+1; i++)
+	for (int i = 0; i < n + 1; i++)
 	{
 		val = f(x.col(i));
 		if (val <= abs_min) { abs_min = val; bestVertexIndex = i; } // compute values of the function at verticies and determine index of vertex with largest/smallest value
 		if (val >= abs_max) { abs_max = val; worstVertexIndex = i; }
 		f_vals(i) = val;
 	}
-	secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
+	secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, (int)(n + 1));
 
 	while (iter_counter < max_iter)
 	{
-		centerOfMass = (x.rowwise().sum() - x.col(worstVertexIndex)) / n;
+		centerOfMass = (x.rowwise().sum() - x.col(worstVertexIndex)) / n; // compute center of mass
 		val = f(centerOfMass);
 		error = sqrt(((f_vals - val).matrix().squaredNorm()) / (n + 1.0));
 		if (error < tol) break;
@@ -93,8 +107,8 @@ void MVNelderMead::solve() noexcept
 				f_vals(worstVertexIndex) = f_contraction;
 			}
 			else {
-				shrinkAndRecalculate(x, f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1); // shrink simplex and find largest and smallest value at new verticies
-				secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
+				shrinkAndRecalculate(x, f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, (int)(n + 1)); // shrink simplex and find largest and smallest value at new verticies
+				secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, (int)(n + 1));
 			}
 		}
 		else {
@@ -105,18 +119,17 @@ void MVNelderMead::solve() noexcept
 				f_vals(worstVertexIndex) = f_contraction;
 			}
 			else {
-				shrinkAndRecalculate(x, f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1);
+				shrinkAndRecalculate(x, f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, (int)(n + 1));
 			}
 		}
 		if (!flag) { // find new largest, second largest and smallest function value at verticies
-			findMaxMin(f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, n + 1);
+			findMaxMin(f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, (int)(n + 1));
 		}
-		secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, n + 1);
+		secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, (int)(n + 1));
 		flag = false;
 		++iter_counter;
 	}
 	result = x.col(bestVertexIndex);
-	was_run = true;
 }
 
 void MVNelderMead::setParams(double tol_, int max_iter_, double randomCoeff_, double alpha_, double beta_, double gamma_, double delta_)
@@ -131,10 +144,20 @@ void MVNelderMead::setParams(double tol_, int max_iter_, double randomCoeff_, do
 	was_run = false;
 }
 
+void MVNelderMead::setStart(Eigen::MatrixXd& simplex)
+{
+	if (simplex.rows() == dimension && simplex.cols() == dimension + 1) {
+		x = &simplex;
+		was_run = false;
+		hasStart = true;
+	}
+	else throw 1;
+}
+
 int MVNelderMead::findSecondWorst(const Eigen::ArrayXd& f_vals, double abs_max, int dimension)
 {
 	int secondWorstVertexIndex = -1;
-	for (size_t i = 0; i < dimension; i++)
+	for (int i = 0; i < dimension; i++)
 	{
 		if (f_vals(i) != abs_max) {
 			if (secondWorstVertexIndex == -1) secondWorstVertexIndex = i;
@@ -149,7 +172,7 @@ void MVNelderMead::findMaxMin(const Eigen::ArrayXd& f_vals, double& abs_max, dou
 	double val = f_vals(0);
 	abs_max = val;
 	abs_min = val;
-	for (size_t i = 0; i < dimension; i++)
+	for (int i = 0; i < dimension; i++)
 	{
 		val = f_vals(i);
 		if (val <= abs_min) { abs_min = val; bestVertexIndex = i; }
@@ -166,7 +189,7 @@ void MVNelderMead::shrinkAndRecalculate(Eigen::MatrixXd& x, Eigen::ArrayXd& f_va
 	double val = f(x.col(0));
 	abs_min = val;
 	abs_max = val;
-	for (size_t i = 0; i < dimension; i++)
+	for (int i = 0; i < dimension; i++)
 	{
 		val = f(x.col(i));
 		if (val <= abs_min) { abs_min = val; bestVertexIndex = i; } // compute values of the function at verticies and determine index of vertex with largest/smallest value

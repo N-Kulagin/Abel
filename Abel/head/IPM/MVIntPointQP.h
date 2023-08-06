@@ -5,15 +5,15 @@
 class MVIntPointQP : public MVIntPointLP {
 
 private:
-	Eigen::MatrixXd G;
-	Eigen::MatrixXd B;
+	const Eigen::MatrixXd* G;
+	const Eigen::MatrixXd* B;
 	Eigen::MatrixXd B_t;
-	Eigen::VectorXd d;
+	const Eigen::VectorXd* d;
 
 public:
 	MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& A, 
 		const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d,
-		size_t dimension, double tol = 1e-10, int max_iter = 100);
+		size_t dimension, double tol = 1e-10, size_t max_iter = 100);
 
 	MVIntPointQP(const MVIntPointQP& ip);
 

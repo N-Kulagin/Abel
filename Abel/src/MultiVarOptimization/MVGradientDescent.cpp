@@ -104,14 +104,8 @@ void MVGradientDescent::solve() noexcept
 			theta = 1.0;
 			theta_prev = theta;
 		}
-		// for debugging purposes
-		//std::cout << "L: " << L << " Beta: " << beta << " Theta: " << theta << " Error: " << error << " Restart: " << (restart_criterion > 0) << '\n';
-		//std::cout << x << '\n';
 		++iter_counter;
 	} while (error >= tol && iter_counter < max_iter);
-
-	// for debugging purposes
-	//std::cout << "This was convex(" << isConvex << "), constant step(" << isConstStep << ')' << '\n';
 
 	result = x;
 	was_run = true;
@@ -125,7 +119,7 @@ void MVGradientDescent::setProx(const std::function<void(Eigen::VectorXd& x, dou
 void MVGradientDescent::setParams(double tol_, size_t max_iter_, double step_) noexcept
 {
 	tol = std::max(1e-15, tol_);
-	max_iter = std::max(2, max_iter);
+	max_iter = std::max((size_t)2, max_iter);
 	iter_counter = 0;
 	was_run = false;
 	step = std::min(std::max(0.0, step) + 0.0001, 1.0);
