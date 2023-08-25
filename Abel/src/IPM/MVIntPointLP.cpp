@@ -2,19 +2,18 @@
 #include "IPM/MVIntPointLP.h"
 
 MVIntPointLP::MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b, 
-	size_t dimension, double tol, size_t max_iter) : A(&A), A_t(A.transpose()), b(&b), c(&c), MVNumericalMethod(dimension, tol, max_iter) {
+	size_t dimension, double tol, size_t max_iter) : A(&A), b(&b), c(&c), MVNumericalMethod(dimension, tol, max_iter) {
 	if (A.cols() != dimension || A.rows() > (int)dimension || b.rows() != A.rows() || c.rows() != dimension) throw 1;
 }
 
-MVIntPointLP::MVIntPointLP(const MVIntPointLP& ip) : A(ip.A), A_t(ip.A_t), b(ip.b), c(ip.c), isDivergent(ip.isDivergent),
-dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.was_run,ip.iter_counter,ip.error,ip.result,ip.starting_point,ip.hasStart) {}
+MVIntPointLP::MVIntPointLP(const MVIntPointLP& ip) : A(ip.A), b(ip.b), c(ip.c), isDivergent(ip.isDivergent),
+dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.iter_counter,ip.error,ip.result,ip.starting_point,ip.hasStart) {}
 
 MVIntPointLP& MVIntPointLP::operator=(const MVIntPointLP& ip)
 {
 	MVNumericalMethod::operator=(ip);
 
 	A = ip.A;
-	A_t = ip.A_t;
 	b = ip.b;
 	c = ip.c;
 	isDivergent = ip.isDivergent;
@@ -33,7 +32,6 @@ void MVIntPointLP::solve() noexcept
 	// used convention of a primal-dual pair is (x,z,s) 
 	// where x is primal variable, z is dual variable related to equality constraints and s is dual variable related to inequality constraints 
 
-	if (was_run) return;
 	Eigen::VectorXd x((*A).cols());
 	Eigen::VectorXd z((*A).rows());
 	Eigen::VectorXd s((*A).cols());
@@ -46,7 +44,7 @@ void MVIntPointLP::solve() noexcept
 	iter_counter = 0;
 	error = 1.0;
 	phase2(x, z, s); // runs Mehrotra's predictor-corrector algorithm on starting point (x,z,s)
-	was_run = true;
+	hasStart = false; // don't use given start point on the potential next run if previously given
  }
 
 int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::VectorXd& dx) const
@@ -71,10 +69,10 @@ int MVIntPointLP::smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::Ve
 
 void MVIntPointLP::phase1(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorXd& s) noexcept
 {
-	Eigen::MatrixXd B = (*A * A_t).inverse();
-	Eigen::VectorXd x_hat = A_t * (B * *b); // find closest to the origin point satisfying Ax = b
+	Eigen::MatrixXd B = (*A * (*A).transpose()).inverse();
+	Eigen::VectorXd x_hat = (*A).transpose() * (B * *b); // find closest to the origin point satisfying Ax = b
 	z = B * (*A * *c); // minimize 0.5 * s^T * s over(s,z) subject to A^T * z + s = c
-	Eigen::VectorXd s_hat = *c - A_t * z;
+	Eigen::VectorXd s_hat = *c - (*A).transpose() * z;
 	Eigen::VectorXd ones = Eigen::VectorXd::Ones(x.size());
 	double delta_x = std::max(-3.0 / 2.0 * x_hat.minCoeff(), 0.0); // find smallest negative element in x and s and scale it by -3/2
 	double delta_s = std::max(-3.0 / 2.0 * s_hat.minCoeff(), 0.0);
@@ -103,7 +101,7 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 				 where S = diag(s), X = diag(x)
 	*/
 	KKT_Matrix.setZero();
-	KKT_Matrix.block(0, n, n, m) = A_t;
+	KKT_Matrix.block(0, n, n, m) = (*A).transpose();
 	KKT_Matrix.block(0, n + m, n, n) = Eigen::MatrixXd::Identity(n, n);
 	KKT_Matrix.block(n, 0, m, n) = *A;
 
@@ -126,7 +124,7 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 		KKT_Matrix.block(n + m, n + m, n, n) = Eigen::MatrixXd(x.asDiagonal());
 
 		// initialize residual (right hand side) of the linear system with new residuals
-		residual.block(0, 0, n, 1) = -(A_t * z + s - *c);
+		residual.block(0, 0, n, 1) = -((*A).transpose() * z + s - *c);
 		residual.block(n, 0, m, 1) = -(*A * x - *b);
 		residual.block(n + m, 0, n, 1) = -(x.array() * s.array());
 
@@ -186,7 +184,6 @@ void MVIntPointLP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& z, 
 		// if x,z,s are of correct dimension and x,s are elementwise non-negative - they're valid starting points
 		starting_point = Eigen::VectorXd(2 * dimension + (*A).rows());
 		hasStart = true;
-		was_run = false;
 		starting_point.block(0, 0, dimension, 1) = x;
 		starting_point.block(dimension, 0, (*A).rows(), 1) = z;
 		starting_point.block(dimension + (*A).rows(), 0, dimension, 1) = s;
@@ -199,7 +196,6 @@ void MVIntPointLP::setParams(double tol_, size_t max_iter_) noexcept
 	tol = std::max(1e-15, tol_);
 	max_iter = std::max((size_t)2, max_iter);
 	iter_counter = 0;
-	was_run = false;
 }
 
 Eigen::VectorXd& MVIntPointLP::getDual() noexcept

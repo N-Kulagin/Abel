@@ -10,7 +10,7 @@ MVGradientDescent::MVGradientDescent(
 
 MVGradientDescent::MVGradientDescent(const MVGradientDescent& gr) : f(gr.f), g(gr.g), f_grad(gr.f_grad), prox(gr.prox), 
 step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep),
-MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.was_run, gr.iter_counter, gr.error, gr.result, gr.starting_point, gr.hasStart) {}
+MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.iter_counter, gr.error, gr.result, gr.starting_point, gr.hasStart) {}
 
 MVGradientDescent& MVGradientDescent::operator=(const MVGradientDescent& gr)
 {
@@ -32,7 +32,6 @@ void MVGradientDescent::solve() noexcept
 	// - Adaptive Restart for Accelerated Gradient Schemes (Brendan O'Donoghue, Emmanuel Candes) - https://arxiv.org/abs/1204.3982
 	// - Lipschitz constant backtracking due to "Amir Beck, First-Order Methods in Optimization" Chapter 10, p. [10,15,23] - https://archive.siam.org/books/mo25/
 
-	if (was_run) { return; }
 	if (!hasStart) { starting_point = Eigen::VectorXd(dimension); starting_point.setRandom(); }
 
 	// variables
@@ -108,7 +107,7 @@ void MVGradientDescent::solve() noexcept
 	} while (error >= tol && iter_counter < max_iter);
 
 	result = x;
-	was_run = true;
+	hasStart = false;
 }
 
 void MVGradientDescent::setProx(const std::function<void(Eigen::VectorXd& x, double alpha)>& Prox)
@@ -121,7 +120,6 @@ void MVGradientDescent::setParams(double tol_, size_t max_iter_, double step_) n
 	tol = std::max(1e-15, tol_);
 	max_iter = std::max((size_t)2, max_iter);
 	iter_counter = 0;
-	was_run = false;
 	step = std::min(std::max(0.0, step) + 0.0001, 1.0);
 }
 
@@ -130,7 +128,6 @@ void MVGradientDescent::setStart(const Eigen::VectorXd& x)
 	if (dimension != x.rows()) throw 1;
 	starting_point = x;
 	hasStart = true;
-	was_run = false;
 }
 
 void MVGradientDescent::toggleConstStep() noexcept

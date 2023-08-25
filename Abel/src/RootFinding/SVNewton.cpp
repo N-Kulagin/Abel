@@ -26,7 +26,6 @@ void SVNewton::setParams(double tol_, double heuristic_, size_t max_iter_, doubl
 	heuristic = heuristic_;
 	max_iter = max_iter_;
 	starting_point = starting_point_;
-	was_run = false;
 	result = 0.0;
 	iter_counter = 0;
 	multiplicity = -1.0;
@@ -40,7 +39,6 @@ double SVNewton::getMultiplicity()
 
 void SVNewton::solve()
 {
-	if (was_run) return;
 	iter_counter = 0;
 
 	double x_prev_prev = starting_point;
@@ -91,7 +89,6 @@ void SVNewton::solve()
 		++iter_counter;
 	}
 	result = x_cur;
-	was_run = 1;
 }
 
 std::ostream& operator<<(std::ostream& out, const SVNewton& n) {

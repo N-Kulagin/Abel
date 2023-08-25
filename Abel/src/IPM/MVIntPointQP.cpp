@@ -3,11 +3,11 @@
 
 MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& A, 
 	const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, size_t dimension, double tol, size_t max_iter) 
-	: G(&G), B(&B), B_t(B.transpose()), d(&d), MVIntPointLP(c,A,b,dimension,tol,max_iter) {
+	: G(&G), B(&B), d(&d), MVIntPointLP(c,A,b,dimension,tol,max_iter) {
 	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows()) throw 1;
 }
 
-MVIntPointQP::MVIntPointQP(const MVIntPointQP& ip) : G(ip.G), B(ip.B), B_t(ip.B_t), d(ip.d), MVIntPointLP(ip) {}
+MVIntPointQP::MVIntPointQP(const MVIntPointQP& ip) : G(ip.G), B(ip.B), d(ip.d), MVIntPointLP(ip) {}
 
 MVIntPointQP& MVIntPointQP::operator=(const MVIntPointQP& ip)
 {
@@ -15,7 +15,6 @@ MVIntPointQP& MVIntPointQP::operator=(const MVIntPointQP& ip)
 
 	G = ip.G;
 	B = ip.B;
-	B_t = ip.B_t;
 	d = ip.d;
 
 	return *this;
@@ -27,8 +26,6 @@ MVIntPointQP& MVIntPointQP::operator=(const MVIntPointQP& ip)
 // Jorge Nocedal, Stephen Wright Numerical Optimization p. 484 -- Predictor-Corrector Algorithm for QP
 void MVIntPointQP::solve() noexcept
 {
-	if (was_run) return;
-
 	int m = (int)(*B).rows();
 	int n = (int)(*B).cols();
 	int k = (int)(*A).rows();
@@ -71,8 +68,8 @@ void MVIntPointQP::solve() noexcept
 
 	KKT_Matrix.setZero();
 	KKT_Matrix.block(0, 0, dimension, dimension) = *G;
-	KKT_Matrix.block(0, dimension, n, m) = B_t;
-	KKT_Matrix.block(0, dimension + m, p, k) = A_t;
+	KKT_Matrix.block(0, dimension, n, m) = (*B).transpose();
+	KKT_Matrix.block(0, dimension + m, p, k) = (*A).transpose();
 	KKT_Matrix.block(dimension, 0, m, n) = *B;
 	KKT_Matrix.block(dimension + m, 0, k, p) = *A;
 
@@ -91,7 +88,7 @@ void MVIntPointQP::solve() noexcept
 		KKT_Matrix.block(dimension + m + k, dimension, m, m) = y.asDiagonal();
 		KKT_Matrix.block(dimension + m + k, dimension + m + k, m, m) = l.asDiagonal(); // construct KKT matrix and residual right hand side
 
-		residual.block(0, 0, dimension, 1) = -(*G * x + *c + B_t * l + A_t * z);
+		residual.block(0, 0, dimension, 1) = -(*G * x + *c + (*B).transpose() * l + (*A).transpose() * z);
 		residual.block(dimension, 0, m, 1) = -(*B * x - *d + y);
 		residual.block(dimension + m, 0, k, 1) = -(*A * x - *b);
 		residual.block(dimension + m + k, 0, m, 1) = -(y.array() * l.array()); // compute affine scaling direction
@@ -162,7 +159,6 @@ void MVIntPointQP::solve() noexcept
 	dual_variables.block(0, 0, m, 1) = l;
 	dual_variables.block(m, 0, k, 1) = z;
 	dual_variables.block(m + k, 0, m, 1) = y;
-	was_run = true;
 }
 
 void MVIntPointQP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, const Eigen::VectorXd& z, const Eigen::VectorXd& y)
@@ -181,6 +177,5 @@ void MVIntPointQP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, 
 	starting_point.block(dimension, 0, B_rows, 1) = l;
 	starting_point.block(dimension + B_rows, 0, A_rows, 1) = z;
 	starting_point.block(dimension + B_rows + A_rows, 0, B_rows, 1) = y;
-	was_run = false;
 	hasStart = true;
 }

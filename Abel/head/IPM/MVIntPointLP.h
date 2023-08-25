@@ -10,7 +10,6 @@ protected:
 	Eigen::VectorXd dual_variables; // vector of dual variables
 
 	const Eigen::MatrixXd* A; // matrix in the set of linear equalities Ax=b
-	Eigen::MatrixXd A_t; // transposed
 	const Eigen::VectorXd* b; // vector in right hand side of the set of linear equalities Ax=b
 	const Eigen::VectorXd* c; // vector in the objective function
 

@@ -5,10 +5,9 @@
 class MVIntPointQP : public MVIntPointLP {
 
 private:
-	const Eigen::MatrixXd* G;
-	const Eigen::MatrixXd* B;
-	Eigen::MatrixXd B_t;
-	const Eigen::VectorXd* d;
+	const Eigen::MatrixXd* G; // matrix in the quadratic objective 1/2 x^T * G x
+	const Eigen::MatrixXd* B; // matrix in inequality constraints Bx <= d
+	const Eigen::VectorXd* d; // right hand side of inequality ocnstraints
 
 public:
 	MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& A, 

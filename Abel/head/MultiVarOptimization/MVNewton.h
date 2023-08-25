@@ -18,7 +18,6 @@ private:
 	Eigen::VectorXd dual_variables; // vector of dual variables
 
 	const Eigen::MatrixXd* A = nullptr; // matrix in the set of linear inequalities Ax=b
-	Eigen::MatrixXd A_t; // transposed
 	const Eigen::VectorXd* b = nullptr; // vector in right hand side of the set of linear inequalities Ax=b
 
 public:

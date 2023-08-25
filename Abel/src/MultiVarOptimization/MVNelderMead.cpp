@@ -3,7 +3,7 @@
 
 MVNelderMead::MVNelderMead(std::function<double(const Eigen::VectorXd& x)> f, size_t dimension, double tol, int max_iter) : f(f), MVNumericalMethod(dimension, tol, max_iter) {}
 
-MVNelderMead::MVNelderMead(const MVNelderMead& nm) : f(nm.f), x(nm.x), MVNumericalMethod(nm.dimension, nm.tol, nm.max_iter, nm.was_run, nm.iter_counter, nm.error,
+MVNelderMead::MVNelderMead(const MVNelderMead& nm) : f(nm.f), x(nm.x), MVNumericalMethod(nm.dimension, nm.tol, nm.max_iter, nm.iter_counter, nm.error,
 	nm.result, nm.starting_point, nm.hasStart) {}
 
 MVNelderMead MVNelderMead::operator=(const MVNelderMead& nm)
@@ -16,7 +16,6 @@ MVNelderMead MVNelderMead::operator=(const MVNelderMead& nm)
 
 void MVNelderMead::solve() noexcept
 {
-	if (was_run) return;
 
 	if (hasStart) {
 		solve_(*x);
@@ -27,7 +26,7 @@ void MVNelderMead::solve() noexcept
 		x *= randomCoeff; // spread the randomized verticies with coefficient randomCoeff
 		solve_(x);
 	}
-	was_run = true;
+	hasStart = false;
 }
 
 void MVNelderMead::solve_(Eigen::MatrixXd& x)
@@ -141,14 +140,12 @@ void MVNelderMead::setParams(double tol_, int max_iter_, double randomCoeff_, do
 	beta = std::min(0.999, std::max(beta_, 0.001));
 	gamma = std::max({ gamma_, alpha_+0.001, 1.001 });
 	delta = std::min(0.999, std::max(delta_, 0.001));
-	was_run = false;
 }
 
 void MVNelderMead::setStart(Eigen::MatrixXd& simplex)
 {
 	if (simplex.rows() == dimension && simplex.cols() == dimension + 1) {
 		x = &simplex;
-		was_run = false;
 		hasStart = true;
 	}
 	else throw 1;

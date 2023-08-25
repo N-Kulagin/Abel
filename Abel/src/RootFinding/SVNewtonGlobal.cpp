@@ -9,7 +9,6 @@ void SVNewtonGlobal::setParams(double tol_, size_t max_iter_, double starting_po
 	tol = tol_;
 	max_iter = max_iter_;
 	starting_point = starting_point_;
-	was_run = false;
 	result = 0.0;
 	iter_counter = 0;
 	multiplicity = -1.0;
@@ -18,7 +17,6 @@ void SVNewtonGlobal::setParams(double tol_, size_t max_iter_, double starting_po
 
 void SVNewtonGlobal::solve()
 {
-	if (was_run) return;
 	iter_counter = 0;
 
 	double x_prev_prev = starting_point;
@@ -68,5 +66,4 @@ void SVNewtonGlobal::solve()
 		++iter_counter;
 	}
 	result = x_cur;
-	was_run = 1;
 }
