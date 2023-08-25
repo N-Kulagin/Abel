@@ -4,6 +4,9 @@
 #include "Base/SVNumericalMethod.h"
 #include "IPM/MVIntPointLP.h"
 #include "IPM/MVIntPointQP.h"
+#include "IPM/MVIntPointSDP.h"
+#include "Miscellaneous/svec.h"
+#include "Miscellaneous/smat.h"
 #include "MultiVarOptimization/MVGradientDescent.h"
 #include "MultiVarOptimization/MVNewton.h"
 #include "MultiVarOptimization/MVNelderMead.h"
@@ -26,8 +29,6 @@
 #include "RootFinding/SVNewton.h"
 #include "RootFinding/SVNewtonGlobal.h"
 #include "SingleVarOptimization/SVGoldenSection.h"
-
-
 
 #include <iostream>
 #include <functional>
