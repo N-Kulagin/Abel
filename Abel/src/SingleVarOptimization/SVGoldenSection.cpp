@@ -4,7 +4,7 @@
 SVGoldenSection::SVGoldenSection(const std::function<double(double)>& f, double tol, double lb, double ub, size_t max_iter) : 
 	f(f), lb(lb), ub(ub), SVNumericalMethod(tol, max_iter) {}
 
-SVGoldenSection::SVGoldenSection(const SVGoldenSection& g) : f(g.f), lb(g.lb), ub(g.ub), SVNumericalMethod(g.tol, g.max_iter, g.was_run, g.iter_counter, g.result, g.error) {}
+SVGoldenSection::SVGoldenSection(const SVGoldenSection& g) : f(g.f), lb(g.lb), ub(g.ub), SVNumericalMethod(g.tol, g.max_iter, g.iter_counter, g.result, g.error) {}
 
 SVGoldenSection& SVGoldenSection::operator=(const SVGoldenSection& g)
 {
@@ -22,14 +22,12 @@ void SVGoldenSection::setParams(double tol_, double lb_, double ub_, size_t max_
 	ub = ub_;
 	max_iter = max_iter_;
 	iter_counter = 0;
-	was_run = false;
 	error = 0.0;
 	result = 0.0;
 }
 
 void SVGoldenSection::solve()
 {
-	if (was_run) return;
 	iter_counter = 0;
 
 	double a = lb;
@@ -66,7 +64,6 @@ void SVGoldenSection::solve()
 	}
 	result = (a + b) / 2.0;
 	error = abs(b - a);
-	was_run = true;
 }
 
 std::ostream& operator<<(std::ostream& out, const SVGoldenSection& g) {

@@ -26,7 +26,9 @@ public:
 
 	virtual void setParams(double tol_ = 0.01, double heuristic_ = 0.05, size_t max_iter_ = 100, double starting_point_ = 1.0);
 
-	double getMultiplicity();
+	double getMultiplicity() const noexcept;
 
 	virtual void solve() override;
+
+	void setStart(double start) noexcept;
 };

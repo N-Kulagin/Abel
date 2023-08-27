@@ -49,7 +49,7 @@ void MVIntPointQP::solve() noexcept
 		z.setRandom();
 		y.setConstant(1.0);
 	}
-	iter_counter = -1;
+	iter_counter = 0;
 	error = 1.0;
 
 	/*
@@ -82,7 +82,6 @@ void MVIntPointQP::solve() noexcept
 
 	int index_primal = -1;
 	int index_dual = -1;
-
 	while (error >= tol && iter_counter < max_iter)
 	{
 		KKT_Matrix.block(dimension + m + k, dimension, m, m) = y.asDiagonal();
@@ -97,7 +96,7 @@ void MVIntPointQP::solve() noexcept
 		dec.compute(KKT_Matrix);
 		solution = dec.solve(residual); // compute affine scaling (predictor) step
 
-		if (iter_counter == -1) { // phase 1 to make a heuristic guess for y and l, uses affine scaling direction
+		if (iter_counter == 0) { // phase 1 to make a heuristic guess for y and l, uses affine scaling direction
 			for (size_t i = 0; i < m; i++)
 			{
 				y(i) = std::max(1.0, std::abs(y(i) + solution(dimension + m + k + i)));

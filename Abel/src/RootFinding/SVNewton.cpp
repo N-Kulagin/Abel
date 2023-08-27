@@ -6,7 +6,7 @@ SVNewton::SVNewton(const std::function<double(double)>& f, const std::function<d
 	f(f), f_prime(f_prime), heuristic(heuristic), starting_point(starting_point), multiplicity(-1.0), SVNumericalMethod(tol, max_iter) {}
 
 SVNewton::SVNewton(const SVNewton& n): f(n.f), f_prime(n.f_prime), heuristic(n.heuristic), starting_point(n.starting_point),
-multiplicity(n.multiplicity), SVNumericalMethod(n.tol, n.max_iter, n.was_run, n.iter_counter, n.result, n.error) {}
+multiplicity(n.multiplicity), SVNumericalMethod(n.tol, n.max_iter, n.iter_counter, n.result, n.error) {}
 
 SVNewton& SVNewton::operator=(const SVNewton& n)
 {
@@ -32,7 +32,7 @@ void SVNewton::setParams(double tol_, double heuristic_, size_t max_iter_, doubl
 	error = 0.0;
 }
 
-double SVNewton::getMultiplicity()
+double SVNewton::getMultiplicity() const noexcept
 {
 	return multiplicity;
 }
@@ -89,6 +89,11 @@ void SVNewton::solve()
 		++iter_counter;
 	}
 	result = x_cur;
+}
+
+void SVNewton::setStart(double start) noexcept
+{
+	starting_point = start;
 }
 
 std::ostream& operator<<(std::ostream& out, const SVNewton& n) {
