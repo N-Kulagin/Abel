@@ -14,6 +14,9 @@ public:
 		const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d,
 		size_t dimension, double tol = 1e-10, size_t max_iter = 100);
 
+	MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& B, const Eigen::VectorXd& d,
+		size_t dimension, double tol = 1e-10, size_t max_iter = 100);
+
 	MVIntPointQP(const MVIntPointQP& ip);
 
 	MVIntPointQP& operator=(const MVIntPointQP& ip);

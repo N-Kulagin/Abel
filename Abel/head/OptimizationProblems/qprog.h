@@ -8,3 +8,7 @@ qprog_Result qprog(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eig
 
 qprog_Result qprog(const Eigen::MatrixXd& G, const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d,
 	double tol = 1e-10, size_t max_iter = 100);
+
+qprog_Result qprog(const Eigen::MatrixXd& G, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, double tol = 1e-10, size_t max_iter = 100);
+
+qprog_Result qprog(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, double tol = 1e-10, size_t max_iter = 100);

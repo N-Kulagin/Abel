@@ -7,6 +7,13 @@ MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, c
 	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows()) throw 1;
 }
 
+MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, 
+	size_t dimension, double tol, size_t max_iter) : G(&G), B(&B), d(&d), MVIntPointLP(Eigen::VectorXd(), Eigen::MatrixXd(), Eigen::VectorXd(),0,tol,max_iter) {
+	this->c = &c;
+	this->dimension = dimension;
+	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows() || c.rows() != dimension) throw 1;
+}
+
 MVIntPointQP::MVIntPointQP(const MVIntPointQP& ip) : G(ip.G), B(ip.B), d(ip.d), MVIntPointLP(ip) {}
 
 MVIntPointQP& MVIntPointQP::operator=(const MVIntPointQP& ip)
@@ -54,9 +61,9 @@ void MVIntPointQP::solve() noexcept
 
 	/*
 	KKT_Matrix = [G, B^T, A^T, 0, (dx)
-				  B,  0,   0,  I, (dl)
-				  A,  0,   0,  0, (dz)
-				  0,  Y,   0,  L] (dy)
+			      B,  0,   0,  I, (dl)
+			      A,  0,   0,  0, (dz)
+			      0,  Y,   0,  L] (dy)
 
 	where Y = diag(y), L = diag(L), I = identity
 	*/
@@ -87,9 +94,14 @@ void MVIntPointQP::solve() noexcept
 		KKT_Matrix.block(dimension + m + k, dimension, m, m) = y.asDiagonal();
 		KKT_Matrix.block(dimension + m + k, dimension + m + k, m, m) = l.asDiagonal(); // construct KKT matrix and residual right hand side
 
-		residual.block(0, 0, dimension, 1) = -(*G * x + *c + (*B).transpose() * l + (*A).transpose() * z);
+		if (k == 0) {
+			residual.block(0, 0, dimension, 1) = -(*G * x + *c + (*B).transpose() * l);
+		}
+		else {
+			residual.block(0, 0, dimension, 1) = -(*G * x + *c + (*B).transpose() * l + (*A).transpose() * z);
+			residual.block(dimension + m, 0, k, 1) = -(*A * x - *b);
+		}
 		residual.block(dimension, 0, m, 1) = -(*B * x - *d + y);
-		residual.block(dimension + m, 0, k, 1) = -(*A * x - *b);
 		residual.block(dimension + m + k, 0, m, 1) = -(y.array() * l.array()); // compute affine scaling direction
 		if (residual.norm() >= 1e+10) { isDivergent = true; return; } // detect divergence if residual gets too high
 
@@ -145,8 +157,11 @@ void MVIntPointQP::solve() noexcept
 			alpha = std::min(1.0, alpha);
 			x += alpha * solution.block(0, 0, dimension, 1);
 			l += alpha * solution.block(dimension, 0, m, 1);
-			z += alpha * solution.block(dimension + m, 0, k, 1);
 			y += alpha * solution.block(dimension + m + k, 0, m, 1);
+
+			if (k != 0) {
+				z += alpha * solution.block(dimension + m, 0, k, 1);
+			}
 
 			error = mu;
 			++iter_counter;
