@@ -48,6 +48,7 @@ void AbelLogger::print(const std::string& s, const std::initializer_list<std::st
 			fout << '\n';
 			++name;
 		}
+		fout.close();
 	}
 	else { throw 1; }
 
