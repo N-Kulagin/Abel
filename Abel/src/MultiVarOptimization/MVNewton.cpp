@@ -5,14 +5,18 @@ MVNewton::MVNewton(
 	std::function<double(const Eigen::VectorXd& x)> f, 
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad,
 	std::function<void(Eigen::MatrixXd& H, const Eigen::VectorXd& input)> f_hess, 
-	size_t dimension, double tol, int max_iter) : f(f), f_grad(f_grad), f_hess(f_hess), 
+	size_t dimension, double tol, int max_iter, bool hasLog) : f(f), f_grad(f_grad), f_hess(f_hess), 
 	Hessian(Eigen::MatrixXd(dimension,dimension)), grad(Eigen::VectorXd(dimension)),
-	MVNumericalMethod(dimension, tol, max_iter) {}
+	MVNumericalMethod(dimension, tol, max_iter, hasLog) {
+	if (hasLog) {
+		lg = AbelLogger(4);
+	}
+}
 
 MVNewton::MVNewton(const MVNewton& n) : alpha(n.alpha), beta(n.beta), hasConstraints(n.hasConstraints),
 	f(n.f), f_grad(n.f_grad), f_hess(n.f_hess), Hessian(n.Hessian), grad(n.grad), dual_variables(n.dual_variables), 
 	A(n.A), b(n.b), 
-	MVNumericalMethod(n.dimension,n.tol,n.max_iter,n.iter_counter,n.error,n.result,n.starting_point,n.hasStart) {}
+	MVNumericalMethod(n.dimension,n.tol,n.max_iter,n.hasLog,n.iter_counter,n.error,n.result,n.starting_point,n.hasStart,n.lg) {}
 
 MVNewton& MVNewton::operator=(const MVNewton& n)
 {
@@ -61,6 +65,16 @@ Eigen::VectorXd& MVNewton::getDual()
 	return dual_variables;
 }
 
+void MVNewton::printLogs() const
+{
+	if (hasConstraints) {
+		lg.print("MVNewton", { "ObjectiveValue", "PrimalResidual", "DualResidual", "Step" });
+	}
+	else {
+		lg.print("MVNewton", { "ObjectiveValue", "NewtonDecrement", "Step" });
+	}
+}
+
 void MVNewton::solve_Constrained() noexcept
 {
 	int A_rows = (int)(*A).rows();
@@ -73,19 +87,22 @@ void MVNewton::solve_Constrained() noexcept
 	Eigen::VectorXd residual(dimension + A_rows);
 	Eigen::VectorXd solution(dimension + A_rows);
 	Eigen::MatrixXd KKT_Matrix(dimension + A_rows, dimension + A_rows);
-	Eigen::MatrixXd zero(A_rows, A_rows);
 
 	mu.setRandom();
 	Eigen::VectorXd x_prev = x;
 	Eigen::VectorXd mu_prev = mu;
 	solution.setRandom();
-	zero.setZero();
+
+	// KKT_System = [ d^2f/dx^2 A^T ] (dx)  =  -( grad_f + A^T * mu )
+	//				[ A			0   ] (dmu) =  -( Ax - b )
 
 	KKT_Matrix.block(0, dimension, dimension, A_rows) = (*A).transpose();
 	KKT_Matrix.block(dimension, 0, A_rows, dimension) = *A;
-	KKT_Matrix.block(dimension, dimension, A_rows, A_rows) = zero;
+	KKT_Matrix.block(dimension, dimension, A_rows, A_rows) = Eigen::MatrixXd::Zero(A_rows,A_rows);
 
 	double step = 1.0;
+	double primal_residual = 1.0;
+	double dual_residual = 1.0;
 
 	do {
 		if (iter_counter == 0) {
@@ -103,7 +120,11 @@ void MVNewton::solve_Constrained() noexcept
 		step = 1.0 / beta;
 		x_prev = x;
 		mu_prev = mu;
-		error = residual.norm();
+
+		primal_residual = residual.block(dimension, 0, A_rows, 1).norm();
+		dual_residual = residual.block(0, 0, dimension, 1).norm();
+		error = sqrt(pow(primal_residual, 2) + pow(dual_residual, 2));
+
 		do
 		{
 			step *= beta;
@@ -115,6 +136,13 @@ void MVNewton::solve_Constrained() noexcept
 			residual.block(dimension, 0, A_rows, 1) = -(*A * x - *b);
 
 		} while (residual.norm() > (1.0 - alpha * step) * error);
+
+		if (hasLog) {
+			lg.record(f(x), 0);
+			lg.record(primal_residual, 1);
+			lg.record(dual_residual, 2);
+			lg.record(step, 3);
+		}
 
 		++iter_counter;
 	} while (error / 2.0 >= tol && iter_counter <= max_iter);
@@ -151,7 +179,12 @@ void MVNewton::solve_Unconstrained() noexcept
 			step *= beta;
 			x = x_prev + step * solution;
 		}
-		error = -(grad.dot(solution));
+		error = -(grad.dot(solution)); // Newton decrement
+		if (hasLog) {
+			lg.record(f(x), 0);
+			lg.record(error, 1);
+			lg.record(step, 2);
+		}
 		++iter_counter;
 	}
 	result = x;

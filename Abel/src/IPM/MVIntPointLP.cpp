@@ -2,12 +2,13 @@
 #include "IPM/MVIntPointLP.h"
 
 MVIntPointLP::MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b, 
-	size_t dimension, double tol, size_t max_iter) : A(&A), b(&b), c(&c), MVNumericalMethod(dimension, tol, max_iter) {
+	size_t dimension, double tol, size_t max_iter, bool hasLog) : A(&A), b(&b), c(&c), MVNumericalMethod(dimension, tol, max_iter, hasLog) {
 	if (A.cols() != dimension || A.rows() > (int)dimension || b.rows() != A.rows() || c.rows() != dimension) throw 1;
+	if (hasLog) { lg = AbelLogger(11); }
 }
 
 MVIntPointLP::MVIntPointLP(const MVIntPointLP& ip) : A(ip.A), b(ip.b), c(ip.c), isDivergent(ip.isDivergent),
-dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.iter_counter,ip.error,ip.result,ip.starting_point,ip.hasStart) {}
+dual_variables(ip.dual_variables), MVNumericalMethod(ip.dimension,ip.tol,ip.max_iter,ip.hasLog,ip.iter_counter,ip.error,ip.result,ip.starting_point,ip.hasStart,ip.lg) {}
 
 MVIntPointLP& MVIntPointLP::operator=(const MVIntPointLP& ip)
 {
@@ -27,7 +28,7 @@ void MVIntPointLP::solve() noexcept
 	// Mehrotra's Predictor-Corrector Algorithm for Linear Programming
 	// Jorge Nocedal, Stephen Wright - Numerical Optimization, page 411
 	// Input problem:
-	// c*x -> minimize, subject to
+	// c^T * x -> minimize, subject to
 	// Ax = b, x >= 0
 	// used convention of a primal-dual pair is (x,z,s) 
 	// where x is primal variable, z is dual variable related to equality constraints and s is dual variable related to inequality constraints 
@@ -117,7 +118,12 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 	int index_primal = -1; // index of the element in dx_affine which has smallest positive ratio in -x(i)/dx(i)
 	int index_dual = -1; // index of the element in ds_affine which has smallest positive ratio in -s(i)/ds(i)
 
-	while (error >= tol && iter_counter < max_iter)
+	double primal_residual_norm = 1;
+	double dual_residual_norm = 1;
+	double primal_objective = 0;
+	double dual_objective = 0;
+
+	while ((error >= tol || std::max(primal_residual_norm, dual_residual_norm) >= tol) && iter_counter < max_iter)
 	{
 		// initialize KKT_Matrix with new diagonal matrices X, S
 		KKT_Matrix.block(n + m, 0, n, n) = Eigen::MatrixXd(s.asDiagonal());
@@ -150,6 +156,9 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 		mu_aff = (x + alpha_aff_primal * solution.block(0, 0, n, 1)).dot(s + alpha_aff_dual * solution.block(n + m, 0, n, 1)) / n;
 		sigma = std::pow(mu_aff / mu, 3.0);
 
+		primal_residual_norm = residual.block(n, 0, m, 1).norm();
+		dual_residual_norm = residual.block(0, 0, n, 1).norm();
+
 		// compute new last n rows of the residual to solve KKT system with different right hand side for corrector direction
 		residual.block(n + m, 0, n, 1) = -(x.array() * s.array() + solution.block(0, 0, n, 1).array() * solution.block(n + m, 0, n, 1).array() - sigma * mu);
 		solution = dec.solve(residual);
@@ -159,6 +168,23 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 
 		alpha_primal = std::min(1.0, eta * (index_primal == -1) ? 1.0 : -x(index_primal) / solution(index_primal)); // compute primal-dual corrector steps
 		alpha_dual = std::min(1.0, eta * (index_dual == -1) ? 1.0 : -s(index_dual) / solution(index_dual + n + m));
+
+		// (mu, c^Tx, z^Tb, alpha_primal, alpha_dual, primal_residual, dual_residual, mu_affine, sigma, alpha_primal_affine, alpha_dual_affine)
+		if (hasLog) {
+			primal_objective = (*c).dot(x);
+			dual_objective = z.dot(*b);
+			lg.record(mu, 0);
+			lg.record(primal_objective, 1);
+			lg.record(dual_objective, 2);
+			lg.record(alpha_primal, 3);
+			lg.record(alpha_dual, 4);
+			lg.record(primal_residual_norm, 5);
+			lg.record(dual_residual_norm, 6);
+			lg.record(mu_aff, 7);
+			lg.record(sigma, 8);
+			lg.record(alpha_aff_primal, 9);
+			lg.record(alpha_aff_dual, 10);
+		}
 
 		x += alpha_primal * solution.block(0, 0, n, 1); // make a step in the corrected direction
 		z += alpha_dual * solution.block(n, 0, m, 1);
@@ -206,4 +232,10 @@ Eigen::VectorXd& MVIntPointLP::getDual() noexcept
 bool MVIntPointLP::isDiverging() const noexcept
 {
 	return isDivergent;
+}
+
+void MVIntPointLP::printLogs() const
+{
+	lg.print("MVIntPointLP", { "Complementarity", "PrimalObjective", "DualObjective", "PrimalStep", "DualStep",
+		"PrimalResidual", "DualResidual", "AffineComplementarity", "Sigma", "AffinePrimalStep", "AffineDualStep" });
 }

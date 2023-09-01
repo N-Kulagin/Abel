@@ -2,16 +2,26 @@
 #include "IPM/MVIntPointQP.h"
 
 MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& A, 
-	const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, size_t dimension, double tol, size_t max_iter) 
-	: G(&G), B(&B), d(&d), MVIntPointLP(c,A,b,dimension,tol,max_iter) {
+	const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, size_t dimension, double tol, size_t max_iter, bool hasLog)
+	: G(&G), B(&B), d(&d), MVIntPointLP(c,A,b,dimension,tol,max_iter,false) {
+
 	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows()) throw 1;
+	if (hasLog) { 
+		this->hasLog = true;
+		lg = AbelLogger(9); 
+	}
 }
 
-MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, 
-	size_t dimension, double tol, size_t max_iter) : G(&G), B(&B), d(&d), MVIntPointLP(Eigen::VectorXd(), Eigen::MatrixXd(), Eigen::VectorXd(),0,tol,max_iter) {
+MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eigen::MatrixXd& B, const Eigen::VectorXd& d,
+	size_t dimension, double tol, size_t max_iter, bool hasLog) : G(&G), B(&B), d(&d), 
+	MVIntPointLP(Eigen::VectorXd(), Eigen::MatrixXd(), Eigen::VectorXd(), 0, tol, max_iter, false) {
 	this->c = &c;
 	this->dimension = dimension;
 	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows() || c.rows() != dimension) throw 1;
+	if (hasLog) { 
+		this->hasLog = true;
+		lg = AbelLogger(9);
+	}
 }
 
 MVIntPointQP::MVIntPointQP(const MVIntPointQP& ip) : G(ip.G), B(ip.B), d(ip.d), MVIntPointLP(ip) {}
@@ -89,7 +99,12 @@ void MVIntPointQP::solve() noexcept
 
 	int index_primal = -1;
 	int index_dual = -1;
-	while (error >= tol && iter_counter < max_iter)
+
+	double primal_residual_norm = 0;
+	double dual_residual_norm = 1;
+	double objective_value = 0;
+
+	while ((error >= tol || std::max(primal_residual_norm,dual_residual_norm) >= tol) && iter_counter < max_iter)
 	{
 		KKT_Matrix.block(dimension + m + k, dimension, m, m) = y.asDiagonal();
 		KKT_Matrix.block(dimension + m + k, dimension + m + k, m, m) = l.asDiagonal(); // construct KKT matrix and residual right hand side
@@ -100,10 +115,17 @@ void MVIntPointQP::solve() noexcept
 		else {
 			residual.block(0, 0, dimension, 1) = -(*G * x + *c + (*B).transpose() * l + (*A).transpose() * z);
 			residual.block(dimension + m, 0, k, 1) = -(*A * x - *b);
+			if (hasLog) { 
+				primal_residual_norm = residual.block(dimension + m, 0, k, 1).norm();
+				objective_value = 0.5 * x.dot(*G * x) + (*c).dot(x);
+			}
 		}
 		residual.block(dimension, 0, m, 1) = -(*B * x - *d + y);
 		residual.block(dimension + m + k, 0, m, 1) = -(y.array() * l.array()); // compute affine scaling direction
-		if (residual.norm() >= 1e+10) { isDivergent = true; return; } // detect divergence if residual gets too high
+
+		dual_residual_norm = residual.block(0, 0, dimension, 1).norm();
+
+		if (std::max(primal_residual_norm,dual_residual_norm) >= 1e+10) { isDivergent = true; return; } // detect divergence if residual gets too high
 
 		dec.compute(KKT_Matrix);
 		solution = dec.solve(residual); // compute affine scaling (predictor) step
@@ -153,6 +175,19 @@ void MVIntPointQP::solve() noexcept
 			alpha_primal = (index_primal == -1) ? 1.0 : -tau * y(index_primal) / solution(dimension + m + k + index_primal);
 			alpha_dual = (index_dual == -1) ? 1.0 : -tau * l(index_dual) / solution(dimension + index_dual);
 
+			// (mu, objective value, alpha_primal, alpha_dual, primal_residual, dual_residual, mu_affine, sigma, alpha_affine)
+			if (hasLog) {
+				lg.record(mu, 0);
+				lg.record(objective_value, 1);
+				lg.record(alpha_primal, 2);
+				lg.record(alpha_dual, 3);
+				lg.record(primal_residual_norm, 4);
+				lg.record(dual_residual_norm, 5);
+				lg.record(mu_aff, 6);
+				lg.record(sigma, 7);
+				lg.record(alpha_aff, 8);
+			}
+
 			alpha = std::min(alpha_primal, alpha_dual); // choose smallest allowed step and no larger than 1.0 as common step
 			alpha = std::min(1.0, alpha);
 			x += alpha * solution.block(0, 0, dimension, 1);
@@ -192,4 +227,9 @@ void MVIntPointQP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, 
 	starting_point.block(dimension + B_rows, 0, A_rows, 1) = z;
 	starting_point.block(dimension + B_rows + A_rows, 0, B_rows, 1) = y;
 	hasStart = true;
+}
+
+void MVIntPointQP::printLogs() const
+{
+	lg.print("MVIntPointQP", { "Complementarity", "PrimalObjective", "PrimalStep", "DualStep", "PrimalResidual", "DualResidual", "AffineComplementarity", "Sigma", "AffineStep" });
 }

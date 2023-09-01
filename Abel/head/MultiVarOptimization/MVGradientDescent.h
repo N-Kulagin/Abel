@@ -6,7 +6,7 @@ class MVGradientDescent : public MVNumericalMethod {
 
 protected:
 	std::function<double(const Eigen::VectorXd& x)> f; // primary differentiable objective, could be used as an alternative for adaptive restarts
-	std::function<double(const Eigen::VectorXd& x)> g; // secondary convex non-differentiable objective, add me to copy constructor and = operator
+	std::function<double(const Eigen::VectorXd& x)> g; // secondary convex non-differentiable objective
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of the function f
 	std::function<void(Eigen::VectorXd&, double)> prox; // proximal operator for step * g function
 	double step; // step length
@@ -20,7 +20,7 @@ public:
 	MVGradientDescent(const std::function<double(const Eigen::VectorXd& x)>& f,
 		const std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)>& f_grad, size_t dimension,
 		std::function<double(const Eigen::VectorXd& x)> g = [](const Eigen::VectorXd& x) { return 0.0; },
-		double tol = 1e-5, double step = 0.001, int max_iter = 100);
+		double tol = 1e-5, double step = 0.001, int max_iter = 100, bool hasLogs = false);
 
 	MVGradientDescent(const MVGradientDescent& gr);
 
@@ -46,4 +46,6 @@ public:
 	void toggleConstStep() noexcept;
 
 	void toggleConvex() noexcept;
+
+	void printLogs() const override;
 };

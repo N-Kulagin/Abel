@@ -1,10 +1,15 @@
 #include "pch.h"
 #include "MultiVarOptimization/MVNelderMead.h"
 
-MVNelderMead::MVNelderMead(std::function<double(const Eigen::VectorXd& x)> f, size_t dimension, double tol, int max_iter) : f(f), MVNumericalMethod(dimension, tol, max_iter) {}
+MVNelderMead::MVNelderMead(std::function<double(const Eigen::VectorXd& x)> f, size_t dimension, double tol, int max_iter, bool hasLog) : 
+	f(f), MVNumericalMethod(dimension, tol, max_iter, hasLog) {
+	if (hasLog) {
+		lg = AbelLogger(3);
+	}
+}
 
-MVNelderMead::MVNelderMead(const MVNelderMead& nm) : f(nm.f), x(nm.x), MVNumericalMethod(nm.dimension, nm.tol, nm.max_iter, nm.iter_counter, nm.error,
-	nm.result, nm.starting_point, nm.hasStart) {}
+MVNelderMead::MVNelderMead(const MVNelderMead& nm) : f(nm.f), x(nm.x), MVNumericalMethod(nm.dimension, nm.tol, nm.max_iter, nm.hasLog, nm.iter_counter, nm.error,
+	nm.result, nm.starting_point, nm.hasStart, nm.lg) {}
 
 MVNelderMead MVNelderMead::operator=(const MVNelderMead& nm)
 {
@@ -124,6 +129,11 @@ void MVNelderMead::solve_(Eigen::MatrixXd& x)
 		if (!flag) { // find new largest, second largest and smallest function value at verticies
 			findMaxMin(f_vals, abs_max, abs_min, worstVertexIndex, bestVertexIndex, (int)(n + 1));
 		}
+		if (hasLog) {
+			lg.record(error, 0);
+			lg.record(abs_min, 1);
+			lg.record(abs_max, 2);
+		}
 		secondWorstVertexIndex = findSecondWorst(f_vals, abs_max, (int)(n + 1));
 		flag = false;
 		++iter_counter;
@@ -149,6 +159,11 @@ void MVNelderMead::setStart(Eigen::MatrixXd& simplex)
 		hasStart = true;
 	}
 	else throw 1;
+}
+
+void MVNelderMead::printLogs() const
+{
+	lg.print("MVNelderMead", { "Error", "ObjectiveMin", "ObjectiveMax" });
 }
 
 int MVNelderMead::findSecondWorst(const Eigen::ArrayXd& f_vals, double abs_max, int dimension)

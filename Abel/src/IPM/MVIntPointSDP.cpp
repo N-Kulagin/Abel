@@ -1,14 +1,17 @@
 #include "pch.h"
 #include "IPM/MVIntPointSDP.h"
 
-MVIntPointSDP::MVIntPointSDP(const std::vector<Eigen::MatrixXd*>& v, const Eigen::VectorXd& b, size_t dimension, double tol, size_t max_iter) :
-	v(v), b(&b), MVNumericalMethod(dimension, tol, max_iter) {
+MVIntPointSDP::MVIntPointSDP(const std::vector<Eigen::MatrixXd*>& v, const Eigen::VectorXd& b, size_t dimension, double tol, size_t max_iter, bool hasLog) :
+	v(v), b(&b), MVNumericalMethod(dimension, tol, max_iter, hasLog) {
 	if (b.rows() > pow(dimension, 2) || b.rows() != v.size() - 1) throw 1;
+	if (hasLog) {
+		lg = AbelLogger(11);
+	}
 }
 
 MVIntPointSDP::MVIntPointSDP(const MVIntPointSDP& s) : v(s.v), X_start(s.X_start), primal_variable_X(s.primal_variable_X), dual_variable_S(s.dual_variable_S), 
 dual_variable_y(s.dual_variable_y), b(s.b), isDivergent(s.isDivergent),
-MVNumericalMethod(s.dimension, s.tol, s.max_iter, s.iter_counter, s.error) {}
+MVNumericalMethod(s.dimension, s.tol, s.max_iter, s.hasLog, s.iter_counter, s.error, Eigen::VectorXd(), Eigen::VectorXd(), s.hasStart, s.lg) {}
 
 MVIntPointSDP& MVIntPointSDP::operator=(const MVIntPointSDP& s)
 {
@@ -42,12 +45,16 @@ void MVIntPointSDP::solve() noexcept
 	Eigen::VectorXd y = Eigen::VectorXd::Ones(m); // vector of dual variables, the algorithm actually produces negative of true dual variables
 
 	double mu = 1.0; // duality gap (X * S) / n;
+	double mu_aff = 1.0; // predicted duality gap after affine scaling direction
 	double sigma = 0; // centering parameter
 	double alpha = 1.0; // step in the primal variables
 	double beta = 1.0; // step in the dual variables
 	double tau = 0.98; // defines how aggressive the steps are (0.99995 is value used in linear programming), closer to 1 -> more aggressive
 	bool isFeasible = false;
-	double infeasibility = 0.0; // infeasibility among constraints
+	double primal_residual_norm = 0.0;
+	double dual_residual_norm = 1.0;
+	double primal_objective = 0;
+	double dual_objective = 0;
 	iter_counter = 0;
 
 	Eigen::LLT<Eigen::MatrixXd> cholX(n); // cholesky of X = LL^T
@@ -117,8 +124,10 @@ void MVIntPointSDP::solve() noexcept
 		{
 			R_d -= y(i - 1) * *v[i];
 		}
-		infeasibility = R_p.norm();
-		isFeasible = (infeasibility < 1e-13) ? true : false; // if infeasibility is small enough, then the iterate is considered primal feasible
+		primal_residual_norm = R_p.norm();
+		dual_residual_norm = R_d.norm();
+
+		isFeasible = (primal_residual_norm < tol) ? true : false; // if infeasibility is small enough, then the iterate is considered primal feasible
 
 		if (!isFeasible) {
 			AffineProjection(A, R_p, X_r); // find X_r such that AX_r = R_p by using least-norm solution
@@ -161,7 +170,8 @@ void MVIntPointSDP::solve() noexcept
 
 		// compute sigma as ratio of predicted complementarity <X+alpha*DX,S+beta*DS> and current complementarity <X,S>, all squared
 		// use previously computed mu since mu = <X,S> / n;
-		sigma = pow((X + alpha * dx).reshaped().dot((S + beta * ds).reshaped()), 2) / pow(mu * n, 2);
+		mu_aff = (X + alpha * dx).reshaped().dot((S + beta * ds).reshaped()) / n;
+		sigma = pow(mu_aff * n, 2) / pow(mu * n, 2);
 		sigma = (alpha + beta >= 1.8) ? std::max(0.05, sigma) : (alpha + beta >= 1.4) ? std::max(0.1, sigma) : std::max(0.2, sigma);
 		// choose sigma depending on how fast the barrier parameter decreases
 
@@ -186,13 +196,27 @@ void MVIntPointSDP::solve() noexcept
 		alpha = (alpha < 0) ? 1.0 : alpha;
 		beta = (beta < 0) ? 1.0 : beta;
 
+		if (hasLog) {
+			primal_objective = v[0]->reshaped().dot(X.reshaped());
+			dual_objective = y.dot(*b);
+			lg.record(mu, 0);
+			lg.record(primal_objective, 1);
+			lg.record(dual_objective, 2);
+			lg.record(alpha, 3);
+			lg.record(beta, 4);
+			lg.record(primal_residual_norm, 5);
+			lg.record(dual_residual_norm, 6);
+			lg.record(mu_aff, 7);
+			lg.record(sigma, 8);
+		}
+
 		X += alpha * dx;
 		S += beta * ds;
 		y += beta * dy;
 
 		++iter_counter;
-		if (error > 1e+10 || infeasibility > 1e+10) { isDivergent = true; break; }
-		if (iter_counter > max_iter || (error < tol) || (sigma > 1) || (alpha < 1e-8 && beta < 1e-8)) { break; }
+		if (error > 1e+10 || std::max(primal_residual_norm,dual_residual_norm) > 1e+10) { isDivergent = true; break; }
+		if (iter_counter > max_iter || (error < tol && std::max(primal_residual_norm, dual_residual_norm) < tol) || (sigma > 1) || (alpha < 1e-8 && beta < 1e-8)) { break; }
 
 	}
 	hasStart = false;
@@ -219,4 +243,9 @@ void MVIntPointSDP::setStart(const Eigen::MatrixXd& X_)
 bool MVIntPointSDP::isDiverging() const noexcept
 {
 	return isDivergent;
+}
+
+void MVIntPointSDP::printLogs() const
+{
+	lg.print("MVIntPointSDP", { "Complementarity", "PrimalObjective", "DualObjective", "PrimalStep", "DualStep", "PrimalResidual", "DualResidual", "AffineComplementarity", "Sigma" });
 }

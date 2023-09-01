@@ -5,6 +5,7 @@
 #include "IPM/MVIntPointLP.h"
 #include "IPM/MVIntPointQP.h"
 #include "IPM/MVIntPointSDP.h"
+#include "Miscellaneous/AbelLogger.h"
 #include "Miscellaneous/svec.h"
 #include "Miscellaneous/smat.h"
 #include "MultiVarOptimization/MVGradientDescent.h"
@@ -22,6 +23,7 @@
 #include "Projections/ball_linf.h"
 #include "Projections/box.h"
 #include "Projections/orthant.h"
+#include "Projections/psd_cone.h"
 #include "Projections/simplex.h"
 #include "Prox/prox_l1.h"
 #include "Prox/prox_l2.h"
@@ -31,6 +33,9 @@
 #include "SingleVarOptimization/SVGoldenSection.h"
 
 #include <iostream>
+#include <fstream>
 #include <functional>
 #include <algorithm>
 #include <unordered_set>
+#include <string>
+#include <chrono>

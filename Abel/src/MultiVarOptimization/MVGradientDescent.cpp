@@ -4,13 +4,17 @@
 MVGradientDescent::MVGradientDescent(
 	const std::function<double(const Eigen::VectorXd& x)>& f, const std::function<void(Eigen::VectorXd& grad,
 	const Eigen::VectorXd& input)>& f_grad, size_t dimension, std::function<double(const Eigen::VectorXd& x)> g, 
-	double tol, double step, int max_iter) :
+	double tol, double step, int max_iter, bool hasLog) :
 	f(f), g(g), f_grad(f_grad), prox([](Eigen::VectorXd& x, double step) {}), step(std::min(std::max(0.0, step) + 1e-4, 1.0)),
-	MVNumericalMethod(dimension, tol, max_iter) {}
+	MVNumericalMethod(dimension, tol, max_iter, hasLog) {
+	if (hasLog) {
+		lg = AbelLogger(4);
+	}
+}
 
 MVGradientDescent::MVGradientDescent(const MVGradientDescent& gr) : f(gr.f), g(gr.g), f_grad(gr.f_grad), prox(gr.prox), 
 step(gr.step), isConvex(gr.isConvex), isConstStep(gr.isConstStep),
-MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.iter_counter, gr.error, gr.result, gr.starting_point, gr.hasStart) {}
+MVNumericalMethod(gr.dimension, gr.tol, gr.max_iter, gr.hasLog, gr.iter_counter, gr.error, gr.result, gr.starting_point, gr.hasStart, gr.lg) {}
 
 MVGradientDescent& MVGradientDescent::operator=(const MVGradientDescent& gr)
 {
@@ -97,6 +101,13 @@ void MVGradientDescent::solve() noexcept
 
 		restart_criterion = isConvex ? G.dot(z) * (-L) : -(G.dot(z)); // restart criterion for different cases of generalized gradient
 
+		if (hasLog) {
+			lg.record(f(y)+g(y), 0);
+			lg.record(error, 1);
+			lg.record(1.0 / L, 2);
+			lg.record(restart_criterion, 3);
+		}
+
 		if (restart_criterion > 0) { // restart whenever this is positive
 			x = x_prev;
 			y = x;
@@ -138,5 +149,10 @@ void MVGradientDescent::toggleConstStep() noexcept
 void MVGradientDescent::toggleConvex() noexcept
 {
 	isConvex = isConvex ? false : true;
+}
+
+void MVGradientDescent::printLogs() const
+{
+	lg.print("MVGradientDescent", { "ObjectiveValue", "GradientNorm", "Step", "RestartCriterion" });
 }
 

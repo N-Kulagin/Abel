@@ -13,7 +13,7 @@ private:
 
 
 public:
-	MVNelderMead(std::function<double(const Eigen::VectorXd& x)> f, size_t dimension, double tol = 1e-3, int max_iter = 100);
+	MVNelderMead(std::function<double(const Eigen::VectorXd& x)> f, size_t dimension, double tol = 1e-3, int max_iter = 100, bool hasLog = false);
 
 	MVNelderMead(const MVNelderMead& nm);
 
@@ -24,6 +24,8 @@ public:
 	void setParams(double tol = 1e-3, int max_iter = 100, double randomCoeff_ = 1.0, double alpha_ = 1.0, double beta_ = 0.5, double gamma_ = 2.0, double delta_ = 0.5);
 
 	void setStart(Eigen::MatrixXd& simplex);
+
+	void printLogs() const override;
 
 private:
 	void solve_(Eigen::MatrixXd& x);

@@ -16,7 +16,7 @@ protected:
 public:
 
 	MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b,
-		size_t dimension, double tol = 1e-10, size_t max_iter = 100);
+		size_t dimension, double tol = 1e-10, size_t max_iter = 100, bool hasLog = false);
 
 	MVIntPointLP(const MVIntPointLP& ip);
 
@@ -28,6 +28,7 @@ public:
 	void setParams(double tol_ = 1e-10, size_t max_iter_ = 100) noexcept;
 	Eigen::VectorXd& getDual() noexcept;
 	bool isDiverging() const noexcept;
+	void printLogs() const override;
 
 protected:
 	int smallest_ratio_index(const Eigen::VectorXd& x, const Eigen::VectorXd& dx) const;

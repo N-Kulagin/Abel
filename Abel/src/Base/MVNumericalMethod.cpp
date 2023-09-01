@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "Base/MVNumericalMethod.h"
 
-MVNumericalMethod::MVNumericalMethod(size_t dimension, double tol, size_t max_iter, int iter_counter, double err,
-	const Eigen::VectorXd& res, const Eigen::VectorXd& starting_point, bool hasStart) :
+MVNumericalMethod::MVNumericalMethod(size_t dimension, double tol, size_t max_iter, bool hasLog, int iter_counter, double err,
+	const Eigen::VectorXd& res, const Eigen::VectorXd& starting_point, bool hasStart, const AbelLogger& lg) :
 	tol(std::min(std::max(1e-14, tol), 0.1)), max_iter(std::max((size_t)2, max_iter)), iter_counter(iter_counter), error(err), result(res), dimension(dimension),
-	starting_point(starting_point), hasStart(hasStart)
+	starting_point(starting_point), hasStart(hasStart), hasLog(hasLog), lg(lg)
 {
 	if (result.size() == 0) {
 		result.resize(dimension);
@@ -22,6 +22,8 @@ MVNumericalMethod& MVNumericalMethod::operator=(const MVNumericalMethod& nm)
 	result = nm.result;
 	hasStart = nm.hasStart;
 	starting_point = nm.starting_point;
+	hasLog = nm.hasLog;
+	lg = nm.lg;
 	return *this;
 }
 
@@ -42,4 +44,9 @@ Eigen::VectorXd& MVNumericalMethod::getResult() const
 double MVNumericalMethod::getError() const
 {
 	return error;
+}
+
+void MVNumericalMethod::printLogs() const
+{
+	lg.print("MVNumericalMethod", {});
 }

@@ -9,9 +9,9 @@ private:
 	double beta = 0.5; // backtracking step scaling factor in (0;1)
 	bool hasConstraints = false;
 
-	std::function<double(const Eigen::VectorXd& x)> f;
-	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad;
-	std::function<void(Eigen::MatrixXd& H, const Eigen::VectorXd& input)> f_hess;
+	std::function<double(const Eigen::VectorXd& x)> f; // objective function
+	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of objective function
+	std::function<void(Eigen::MatrixXd& H, const Eigen::VectorXd& input)> f_hess; // hessian of objective function
 
 	Eigen::MatrixXd Hessian; // hessian matrix
 	Eigen::VectorXd grad; // gradient of the function
@@ -24,7 +24,7 @@ public:
 	MVNewton(std::function<double(const Eigen::VectorXd& x)> f, 
 		std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad,
 		std::function<void(Eigen::MatrixXd& H, const Eigen::VectorXd& input)> f_hess, 
-		size_t dimension, double tol = 1e-10, int max_iter = 100);
+		size_t dimension, double tol = 1e-10, int max_iter = 100, bool hasLog = false);
 
 	MVNewton(const MVNewton& n);
 
@@ -35,6 +35,7 @@ public:
 	void setParams(double tol = 1e-10, size_t max_iter = 100, double alpha = 0.1, double beta = 0.5);
 	void solve() noexcept override;
 	Eigen::VectorXd& getDual();
+	void printLogs() const override;
 
 private:
 	void solve_Constrained() noexcept;
