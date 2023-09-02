@@ -41,6 +41,7 @@ void AbelLogger::print(const std::string& s, const std::initializer_list<std::st
 
 	if (fout.is_open()) {
 		for (const auto& el : v) {
+			if (el.size() == 0) break;
 			fout << *name << '\n';
 			for (const auto& el2 : el) {
 				fout << std::scientific << el2 << '\n';
