@@ -9,7 +9,7 @@ protected:
 	std::function<double(const Eigen::VectorXd& x)> g; // secondary convex non-differentiable objective
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of the function f
 	std::function<void(Eigen::VectorXd&, double)> prox; // proximal operator for step * g function
-	double step; // step length
+	double step = 1.0; // step length
 	double gamma = 0.5; // non-convex backtracking parameter
 	double eta = 2.0; // backtracking parameter
 	double L = 1.0; // Lipschitz constant

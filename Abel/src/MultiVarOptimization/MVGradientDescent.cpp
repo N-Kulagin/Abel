@@ -5,7 +5,7 @@ MVGradientDescent::MVGradientDescent(
 	const std::function<double(const Eigen::VectorXd& x)>& f, const std::function<void(Eigen::VectorXd& grad,
 	const Eigen::VectorXd& input)>& f_grad, size_t dimension, std::function<double(const Eigen::VectorXd& x)> g, 
 	double tol, double step, int max_iter, bool hasLog) :
-	f(f), g(g), f_grad(f_grad), prox([](Eigen::VectorXd& x, double step) {}), step(std::min(std::max(0.0, step) + 1e-4, 1.0)),
+	f(f), g(g), f_grad(f_grad), prox([](Eigen::VectorXd& x, double step) {}), step(std::min(std::max(0.0, step) + 1e-10, 1.0)),
 	MVNumericalMethod(dimension, tol, max_iter, hasLog) {
 	if (hasLog) {
 		lg = AbelLogger(4);
@@ -70,7 +70,7 @@ void MVGradientDescent::solve() noexcept
 		if (error <= 1e-15) { ++iter_counter; x = y; break; } // safety
 		if (!isConstStep && isConvex)
 		{
-			while (f(y) > f(y_prev) + grad.dot(G) + L / 2.0 * error) // backtracking for convex case
+			while (f(y) > f(y_prev) + grad.dot(G) + L / 2.0 * error && L < 1e+10) // backtracking for convex case
 			{
 				L *= eta;
 				y = y_prev - grad / L;
@@ -81,7 +81,7 @@ void MVGradientDescent::solve() noexcept
 		}
 		else if (!isConstStep && !isConvex)
 		{
-			while (f(y_prev) + g(y_prev) - f(y) - g(y) < gamma / L * error) // backtracking for non-convex case
+			while (f(y_prev) + g(y_prev) - f(y) - g(y) < gamma / L * error && L < 1e+10) // backtracking for non-convex case
 			{
 				L *= eta;
 				y = y_prev - grad / L;
