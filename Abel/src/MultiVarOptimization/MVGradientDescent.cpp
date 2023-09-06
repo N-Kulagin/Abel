@@ -56,7 +56,7 @@ void MVGradientDescent::solve() noexcept
 	do
 	{
 		y_prev = y;
-		L = isConstStep ? 1.0 / step : 1.0; // if there's a const step enabled choose L accordingly (step = 1/L), otherwise set L = 1.0
+		L = isConstStep ? 1.0 / step : L; // if there's a const step enabled choose L accordingly (step = 1/L), otherwise set L = 1.0 (default) or equal to previous L
 		f_grad(grad, y_prev);
 		y = y_prev - grad / L;
 		prox(y, 1.0 / L); // evaluate next prox iterate
@@ -100,6 +100,11 @@ void MVGradientDescent::solve() noexcept
 		y = x + beta * (z);
 
 		restart_criterion = isConvex ? G.dot(z) * (-L) : -(G.dot(z)); // restart criterion for different cases of generalized gradient
+
+		// after L has been increased by backtracking, decrease it a bit to 
+		// Optimization and Statistics - Лекции по курсу численные методы оптимизации ФУПМ 2022. Лекция 5
+		// https://www.youtube.com/live/JOLoR5Io4AQ?si=7MLeJOEHXR7YirNJ&t=3293
+		L /= eta;
 
 		if (hasLog) {
 			lg.record(f(y)+g(y), 0);
