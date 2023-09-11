@@ -1,10 +1,18 @@
 #pragma once
 
+#define ABEL_EX_MSG_INVALID_DIM "Invalid matrix-vector dimensions"
+#define ABEL_EX_MSG_NONEGATIVE "Input vector must be non-negative componentwise"
+#define ABEL_EX_MSG_CANT_OPEN_FILE "Couldn't open file for logging"
+#define ABEL_EX_CODE_INVALID_DIM 1
+#define ABEL_EX_CODE_NONEGATIVE 2
+#define ABEL_EX_CODE_CANT_OPEN_FILE 3
+
 #include "Base/MVNumericalMethod.h"
 #include "Base/SVNumericalMethod.h"
 #include "IPM/MVIntPointLP.h"
 #include "IPM/MVIntPointQP.h"
 #include "IPM/MVIntPointSDP.h"
+#include "Miscellaneous/AbelException.h"
 #include "Miscellaneous/AbelLogger.h"
 #include "Miscellaneous/svec.h"
 #include "Miscellaneous/smat.h"

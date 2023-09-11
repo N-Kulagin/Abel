@@ -38,7 +38,7 @@ MVNewton& MVNewton::operator=(const MVNewton& n)
 
 void MVNewton::setConstraints(const Eigen::MatrixXd& A_mat, const Eigen::VectorXd& b_vec)
 {
-	if (A_mat.cols() != dimension || b_vec.rows() != A_mat.rows() || A_mat.rows() > A_mat.cols()) throw 1;
+	if (A_mat.cols() != dimension || b_vec.rows() != A_mat.rows() || A_mat.rows() > A_mat.cols()) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	hasConstraints = true;
 	A = &A_mat;
 	b = &b_vec;
@@ -46,7 +46,7 @@ void MVNewton::setConstraints(const Eigen::MatrixXd& A_mat, const Eigen::VectorX
 
 void MVNewton::setStart(const Eigen::VectorXd& x)
 {
-	if (x.size() != dimension) throw 1;
+	if (x.size() != dimension) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	hasStart = true;
 	starting_point = x;
 }

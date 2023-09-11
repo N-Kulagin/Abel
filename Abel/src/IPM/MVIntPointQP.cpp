@@ -5,7 +5,7 @@ MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, c
 	const Eigen::VectorXd& b, const Eigen::MatrixXd& B, const Eigen::VectorXd& d, size_t dimension, double tol, size_t max_iter, bool hasLog)
 	: G(&G), B(&B), d(&d), MVIntPointLP(c,A,b,dimension,tol,max_iter,false) {
 
-	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows()) throw 1;
+	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows()) throw AbelException(ABEL_EX_MSG_INVALID_DIM,ABEL_EX_CODE_INVALID_DIM);
 	if (hasLog) { 
 		this->hasLog = true;
 		lg = AbelLogger(9); 
@@ -17,7 +17,7 @@ MVIntPointQP::MVIntPointQP(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, c
 	MVIntPointLP(Eigen::VectorXd(), Eigen::MatrixXd(), Eigen::VectorXd(), 0, tol, max_iter, false) {
 	this->c = &c;
 	this->dimension = dimension;
-	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows() || c.rows() != dimension) throw 1;
+	if (G.rows() != dimension || G.cols() != dimension || B.cols() != dimension || d.rows() != B.rows() || c.rows() != dimension) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	if (hasLog) { 
 		this->hasLog = true;
 		lg = AbelLogger(9);
@@ -215,11 +215,11 @@ void MVIntPointQP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& l, 
 	// (x,lambda,z,y)
 	int A_rows = (int)(*A).rows();
 	int B_rows = (int)(*B).rows();
-	if (l.minCoeff() < 0 || y.minCoeff() < 0) throw 1;
+	if (l.minCoeff() < 0 || y.minCoeff() < 0) throw AbelException(ABEL_EX_MSG_NONEGATIVE, ABEL_EX_CODE_NONEGATIVE);
 	if (x.rows() != dimension 
 		|| l.rows() != B_rows
 		|| y.rows() != B_rows
-		|| z.rows() != A_rows) throw 1;
+		|| z.rows() != A_rows) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 
 	starting_point = Eigen::VectorXd(dimension + 2 * B_rows + A_rows);
 	starting_point.block(0, 0, dimension, 1) = x;

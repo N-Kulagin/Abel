@@ -141,7 +141,7 @@ void MVGradientDescent::setParams(double tol_, size_t max_iter_, double step_) n
 
 void MVGradientDescent::setStart(const Eigen::VectorXd& x)
 {
-	if (dimension != x.rows()) throw 1;
+	if (dimension != x.rows()) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	starting_point = x;
 	hasStart = true;
 }

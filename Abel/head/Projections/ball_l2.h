@@ -4,6 +4,8 @@
 
 template <typename Derived>
 void L2BallProjection_InPlace(Eigen::MatrixBase<Derived>const& vec, double radius = 1.0) {
+	// minimize 1/2 ||y-x||_2^2 subject to ||y||_2 <= radius
+
 	double norm_squared = vec.squaredNorm();
 	if (norm_squared <= pow(radius,2.0)) return;
 	const_cast<Eigen::MatrixBase<Derived>&>(vec) *= radius / sqrt(norm_squared); // cast to reference for block or matrix column inputs

@@ -3,7 +3,7 @@
 
 MVIntPointLP::MVIntPointLP(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eigen::VectorXd& b, 
 	size_t dimension, double tol, size_t max_iter, bool hasLog) : A(&A), b(&b), c(&c), MVNumericalMethod(dimension, tol, max_iter, hasLog) {
-	if (A.cols() != dimension || A.rows() > (int)dimension || b.rows() != A.rows() || c.rows() != dimension) throw 1;
+	if (A.cols() != dimension || A.rows() > (int)dimension || b.rows() != A.rows() || c.rows() != dimension) throw AbelException(ABEL_EX_MSG_INVALID_DIM,ABEL_EX_CODE_INVALID_DIM);
 	if (hasLog) { lg = AbelLogger(11); }
 }
 
@@ -206,7 +206,13 @@ void MVIntPointLP::phase2(Eigen::VectorXd& x, Eigen::VectorXd& z, Eigen::VectorX
 
 void MVIntPointLP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& z, const Eigen::VectorXd& s)
 {
-	if (x.size() == dimension && z.size() == (*A).rows() && s.size() == dimension && x.minCoeff() >= 0 && s.minCoeff() >= 0) {
+	if (x.size() != dimension || z.size() != (*A).rows() || s.size() != dimension) {
+		throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
+	}
+	else if (x.minCoeff() < 0 || s.minCoeff() < 0) {
+		throw AbelException(ABEL_EX_MSG_NONEGATIVE, ABEL_EX_CODE_NONEGATIVE);
+	}
+	else {
 		// if x,z,s are of correct dimension and x,s are elementwise non-negative - they're valid starting points
 		starting_point = Eigen::VectorXd(2 * dimension + (*A).rows());
 		hasStart = true;
@@ -214,7 +220,6 @@ void MVIntPointLP::setStart(const Eigen::VectorXd& x, const Eigen::VectorXd& z, 
 		starting_point.block(dimension, 0, (*A).rows(), 1) = z;
 		starting_point.block(dimension + (*A).rows(), 0, dimension, 1) = s;
 	}
-	else throw 1;
 }
 
 void MVIntPointLP::setParams(double tol_, size_t max_iter_) noexcept

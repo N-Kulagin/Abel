@@ -51,6 +51,6 @@ void AbelLogger::print(const std::string& s, const std::initializer_list<std::st
 		}
 		fout.close();
 	}
-	else { throw 1; }
+	else { throw AbelException(ABEL_EX_MSG_CANT_OPEN_FILE, ABEL_EX_CODE_CANT_OPEN_FILE); }
 
 }

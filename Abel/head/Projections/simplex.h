@@ -7,7 +7,15 @@
 template <typename Derived>
 void SimplexProjection(Eigen::MatrixBase<Derived>const& y, double beta = 1.0) {
 
-	if (y.cols() > 1) throw 1;
+	// J. Duchi, S. Shalev-Shwartz, Y. Singer, and T. Chandra
+	// Efficient Projections onto the l1-Ball for Learning in High Dimensions
+	// in Proceedings of the 25th international conference on Machine learning. ACM, 2008, pp. 272–279.
+	// https://stanford.edu/~jduchi/projects/DuchiShSiCh08.pdf
+	// (includes O(n) projection onto a simplex)
+
+	// minimize 1/2 ||y-x||_2^2 subject to sum of y_i = beta, y >= 0
+
+	if (y.cols() > 1) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 
 	bool inside_simplex = true;
 	bool satisfy_equality = false;

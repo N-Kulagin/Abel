@@ -11,7 +11,7 @@ qprog_Result qprog(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eig
 	int k = (int)B.cols();
 	int c_rows = (int)c.rows();
 
-	if (G.rows() != k || G.cols() != k) throw 1;
+	if (G.rows() != k || G.cols() != k) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 
 	// pair (A,b) is valid if A has as many rows as b, A has no more rows than B has columns (columns of B are assumed to be what determines dimension of the problem)
 	// pair (B,d) is considered valid if B has as many rows as d and B is not an empty matrix
@@ -21,7 +21,7 @@ qprog_Result qprog(const Eigen::MatrixXd& G, const Eigen::VectorXd& c, const Eig
 	bool valid_Bd = (p == d.rows() && p != 0 && k != 0) ? true : false;
 	bool valid_c = (c_rows == 0 || c_rows == k) ? true : false;
 
-	if (!(valid_Ab && valid_Bd && valid_c)) throw 1;
+	if (!(valid_Ab && valid_Bd && valid_c)) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 
 	Eigen::VectorXd cons; // if c is empty vector, use zero vector instead
 	if (c_rows == 0) {

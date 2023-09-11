@@ -23,7 +23,7 @@ lprog_Result lprog(const Eigen::VectorXd& c, const Eigen::MatrixXd& A, const Eig
 	// if A and b are empty or A has as many rows as b and non-empty and has no more rows than B has columns, then it's a valid pair (A,b)
 	if ((m == 0 && n == 0 && b.rows() == 0) || (m == b.rows() && m != 0 && n != 0 && m <= k)) valid_Ab = true;
 
-	if (!(valid_Ab && valid_Bd)) throw 1; // throw if any of the pairs (A,b) or (B,d) are invalid
+	if (!(valid_Ab && valid_Bd)) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM); // throw if any of the pairs (A,b) or (B,d) are invalid
 
 	Eigen::MatrixXd mat;
 	Eigen::VectorXd rhs;

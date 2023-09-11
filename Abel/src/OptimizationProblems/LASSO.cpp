@@ -5,7 +5,7 @@
 LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eigen::VectorXd& start_point, const double beta, const double tol,
 	const bool refine_sol, const double refine_level, const int max_iter) {
 
-	if (A.rows() != b.rows()) throw 1;
+	if (A.rows() != b.rows()) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 
 	double beta_safe = std::max(0.0, beta);
 

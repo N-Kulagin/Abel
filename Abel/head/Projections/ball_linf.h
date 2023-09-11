@@ -5,7 +5,9 @@
 template <typename Derived>
 void LInfBallProjection(Eigen::MatrixBase<Derived> const& y, double beta = 1.0) {
 
-	if (y.cols() > 1) throw 1;
+	// minimize 1/2 ||y-x||_2^2 subject to ||y||_infinity <= beta
+
+	if (y.cols() > 1) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	const_cast<Eigen::MatrixBase<Derived>&>(y) = y.unaryExpr([&beta](double x) {return abs(x) > beta ? beta * copysign(1.0, x) : x; });
 }
 

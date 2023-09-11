@@ -158,7 +158,7 @@ void MVNelderMead::setStart(Eigen::MatrixXd& simplex)
 		x = &simplex;
 		hasStart = true;
 	}
-	else throw 1;
+	else throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 }
 
 void MVNelderMead::printLogs() const

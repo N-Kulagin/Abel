@@ -3,7 +3,7 @@
 
 MVIntPointSDP::MVIntPointSDP(const std::vector<Eigen::MatrixXd*>& v, const Eigen::VectorXd& b, size_t dimension, double tol, size_t max_iter, bool hasLog) :
 	v(v), b(&b), MVNumericalMethod(dimension, tol, max_iter, hasLog) {
-	if (b.rows() > pow(dimension, 2) || b.rows() != v.size() - 1) throw 1;
+	if (b.rows() > pow(dimension, 2) || b.rows() != v.size() - 1) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	if (hasLog) {
 		lg = AbelLogger(11);
 	}
@@ -235,7 +235,7 @@ void MVIntPointSDP::setParams(double tol_, size_t max_iter_) noexcept
 
 void MVIntPointSDP::setStart(const Eigen::MatrixXd& X_)
 {
-	if (X_.rows() != dimension * dimension || X_.cols() != dimension * dimension) throw 1;
+	if (X_.rows() != dimension * dimension || X_.cols() != dimension * dimension) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	X_start = X_;
 	hasStart = true;
 }

@@ -6,7 +6,9 @@
 template <typename Derived>
 void L2Prox(Eigen::MatrixBase<Derived>const& y, double beta = 1.0) {
 
-	if (y.cols() > 1) throw 1;
+	// prox operator for g(x) = beta * ||x||_2 (using Moreau decomposition theorem)
+
+	if (y.cols() > 1) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 
 	if (y.norm() <= beta) {
 		const_cast<Eigen::MatrixBase<Derived>&>(y) = const_cast<Eigen::MatrixBase<Derived>&>(y).setConstant(0.0);
