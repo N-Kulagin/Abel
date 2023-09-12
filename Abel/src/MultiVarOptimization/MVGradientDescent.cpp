@@ -93,7 +93,8 @@ void MVGradientDescent::solve() noexcept
 		error = sqrt(error);
 		x_prev = x;
 		x = y;
-		theta = (1.0 + sqrt(1.0 + 4.0 * pow(theta_prev, 2.0))) / 2.0;
+		//theta = (1.0 + sqrt(1.0 + 4.0 * pow(theta_prev, 2.0))) / 2.0; <--- this update scheme is used in the referenced paper
+		theta = theta_prev + 0.5; // <--- asymptotically the same as above, but uses simpler update scheme
 		beta = (theta_prev - 1.0) / theta;
 		theta_prev = theta;
 		z = x - x_prev;
@@ -101,7 +102,7 @@ void MVGradientDescent::solve() noexcept
 
 		restart_criterion = isConvex ? G.dot(z) * (-L) : -(G.dot(z)); // restart criterion for different cases of generalized gradient
 
-		// after L has been increased by backtracking, decrease it a bit to 
+		// after L has been increased by backtracking, decrease it a bit to allow for both decreasing and increasing step lengths
 		// Optimization and Statistics - Лекции по курсу численные методы оптимизации ФУПМ 2022. Лекция 5
 		// https://www.youtube.com/live/JOLoR5Io4AQ?si=7MLeJOEHXR7YirNJ&t=3293
 		L /= eta;
