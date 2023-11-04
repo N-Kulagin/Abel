@@ -13,8 +13,8 @@ private:
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad; // gradient of objective function
 	std::function<void(Eigen::MatrixXd& H, const Eigen::VectorXd& input)> f_hess; // hessian of objective function
 
-	Eigen::MatrixXd Hessian; // hessian matrix
-	Eigen::VectorXd grad; // gradient of the function
+	//Eigen::MatrixXd Hessian; // hessian matrix
+	//Eigen::VectorXd grad; // gradient of the function
 	Eigen::VectorXd dual_variables; // vector of dual variables
 
 	const Eigen::MatrixXd* A = nullptr; // matrix in the set of linear inequalities Ax=b

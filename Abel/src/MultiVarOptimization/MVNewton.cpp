@@ -5,8 +5,7 @@ MVNewton::MVNewton(
 	std::function<double(const Eigen::VectorXd& x)> f, 
 	std::function<void(Eigen::VectorXd& grad, const Eigen::VectorXd& input)> f_grad,
 	std::function<void(Eigen::MatrixXd& H, const Eigen::VectorXd& input)> f_hess, 
-	size_t dimension, double tol, int max_iter, bool hasLog) : f(f), f_grad(f_grad), f_hess(f_hess), 
-	Hessian(Eigen::MatrixXd(dimension,dimension)), grad(Eigen::VectorXd(dimension)),
+	size_t dimension, double tol, int max_iter, bool hasLog) : f(f), f_grad(f_grad), f_hess(f_hess),
 	MVNumericalMethod(dimension, tol, max_iter, hasLog) {
 	if (hasLog) {
 		lg = AbelLogger(4);
@@ -14,7 +13,7 @@ MVNewton::MVNewton(
 }
 
 MVNewton::MVNewton(const MVNewton& n) : alpha(n.alpha), beta(n.beta), hasConstraints(n.hasConstraints),
-	f(n.f), f_grad(n.f_grad), f_hess(n.f_hess), Hessian(n.Hessian), grad(n.grad), dual_variables(n.dual_variables), 
+	f(n.f), f_grad(n.f_grad), f_hess(n.f_hess), dual_variables(n.dual_variables), 
 	A(n.A), b(n.b), 
 	MVNumericalMethod(n.dimension,n.tol,n.max_iter,n.hasLog,n.iter_counter,n.error,n.result,n.starting_point,n.hasStart,n.lg) {}
 
@@ -27,8 +26,6 @@ MVNewton& MVNewton::operator=(const MVNewton& n)
 	f = n.f;
 	f_grad = n.f_grad;
 	f_hess = n.f_hess;
-	Hessian = n.Hessian;
-	grad = n.grad;
 	dual_variables = n.dual_variables;
 	A = n.A;
 	b = n.b;
@@ -104,6 +101,9 @@ void MVNewton::solve_Constrained() noexcept
 	double primal_residual = 1.0;
 	double dual_residual = 1.0;
 
+	Eigen::VectorXd grad = Eigen::VectorXd::Zero(dimension);
+	Eigen::MatrixXd Hessian = Eigen::MatrixXd::Zero(dimension,dimension);
+
 	do {
 		if (iter_counter == 0) {
 			f_grad(grad, x);
@@ -162,6 +162,9 @@ void MVNewton::solve_Unconstrained() noexcept
 	Eigen::VectorXd solution(dimension);
 
 	double step = 1.0;
+
+	Eigen::VectorXd grad = Eigen::VectorXd::Zero(dimension);
+	Eigen::MatrixXd Hessian = Eigen::MatrixXd::Zero(dimension, dimension);
 
 	while (error/2.0 >= tol && iter_counter < max_iter)
 	{
