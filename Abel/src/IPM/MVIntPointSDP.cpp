@@ -235,7 +235,7 @@ void MVIntPointSDP::setParams(double tol_, size_t max_iter_) noexcept
 
 void MVIntPointSDP::setStart(const Eigen::MatrixXd& X_)
 {
-	if (X_.rows() != dimension * dimension || X_.cols() != dimension * dimension) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
+	if (X_.rows() != dimension || X_.cols() != dimension) throw AbelException(ABEL_EX_MSG_INVALID_DIM, ABEL_EX_CODE_INVALID_DIM);
 	X_start = X_;
 	hasStart = true;
 }
