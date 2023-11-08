@@ -62,5 +62,5 @@ LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eig
 
 LASSO_Result LASSO(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const double beta, const double tol, const bool refine_sol, const double refine_level, const int max_iter)
 {
-	return LASSO(A, b, Eigen::VectorXd(), tol, refine_sol, refine_level, max_iter);
+	return LASSO(A, b, Eigen::VectorXd(), beta, tol, refine_sol, refine_level, max_iter);
 }
